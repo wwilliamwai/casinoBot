@@ -23,7 +23,7 @@ module.exports = {
 		dealerHand.push(deck.takeTopCard());
 
 		// create the embed element
-		const gameEmbed = createEmbedElement(deck, playerHand, dealerHand, interaction);
+		const gameEmbed = createEmbedElement(playerHand, dealerHand, interaction, false);
 		// create row item
 		const row = createHitStandButtons();
 		// send the embeded message
@@ -34,33 +34,68 @@ module.exports = {
 
 		collector.on('collect', async i => {
 			if (i.customId === 'hit') {
+				collector.resetTimer();
 				playerHand.push(deck.takeTopCard());
-				await updateEmbed(deck, playerHand, dealerHand, row, interaction);
-
+				await updateEmbed(playerHand, dealerHand, row, interaction, false);
+				const playerSum = sumOfHand(playerHand);
 				// check if the player busted after hitting
-				if (sumOfHand(playerHand) > 21) {
+				if (playerSum > 21) {
 					collector.stop('bust');
+				}
+				else if (playerSum === 21) {
+					collector.stop('got21');
 				}
 				else {
 					await i.deferUpdate();
 				}
 			}
+			if (i.customId === 'stand') {
+				collector.resetTimer();
+				while (sumOfHand(dealerHand) < 17 && sumOfHand(dealerHand) < sumOfHand(playerHand)) {
+					dealerHand.push(deck.takeTopCard());
+				};
+				collector.stop('dealer-end');
+			}
 		});
 		collector.on('end', async (collected, reason) => {
 			if (reason === 'time') {
-				await interaction.editReply({ content: 'You took longer than 30 seconds to make a move. :3', components: [] });
+				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await interaction.editReply({ content: 'dingus. you took more than 30 seconds to make a move', components: [] });
 			}
 			if (reason === 'bust') {
-				await interaction.editReply({ content: 'You busted!', components: [] });
+				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await interaction.editReply({ content: 'busted!\u{274C}', components: [] });
+			}
+			if (reason === 'got21') {
+				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await dictateGameEnd(playerHand, dealerHand, interaction);
+			}
+			if (reason === 'dealer-end') {
+				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await dictateGameEnd(playerHand, dealerHand, interaction);
 			}
 		});
 	},
 };
 
 // helper methods
-const updateEmbed = async (deck, playerHand, dealerHand, row, interaction) => {
+const dictateGameEnd = async (playerHand, dealerHand, interaction) => {
+	const playerSum = sumOfHand(playerHand);
+	const dealerSum = sumOfHand(dealerHand);
+
+	if (playerSum == 21 && dealerSum == 21) {
+		await interaction.editReply({ content: 'Wait. You guys drew? what the sigma!', components: [] });
+	}
+	else if (dealerSum <= 21 && dealerSum > playerSum) {
+		await interaction.editReply({ content: 'you lost unlucky tbh', components: [] });
+	}
+	else {
+		await interaction.editReply({ content: 'omg you beat the dealer so cool :3', components: [] });
+	}
+};
+const updateEmbed = async (playerHand, dealerHand, row, interaction, dealerTurn) => {
 	// create a new embed object
-	const updatedEmbed = createEmbedElement(deck, playerHand, dealerHand, interaction);
+	const updatedEmbed = createEmbedElement(playerHand, dealerHand, interaction, dealerTurn);
 
 	await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
 };
@@ -79,7 +114,7 @@ const createHitStandButtons = () => {
 	);
 };
 
-const createEmbedElement = (deck, playerHand, dealerHand, interaction) => {
+const createEmbedElement = (playerHand, dealerHand, interaction, dealerTurn) => {
 	return new EmbedBuilder()
 		.setColor(0x163d0f)
 		.setAuthor({
@@ -89,7 +124,8 @@ const createEmbedElement = (deck, playerHand, dealerHand, interaction) => {
 		.setTitle('BlackJack')
 		.setTimestamp(Date.now())
 		.setDescription(`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n
-Dealer | ${faceCardsToNum(dealerHand[0][1])}+\n${handToString(dealerHand.slice(0, 1))} \`  \``);
+Dealer | ${faceCardsToNum(dealerTurn ? sumOfHand(dealerHand) : dealerHand[0][1] + '+')}\n${dealerTurn ?
+	 handToString(dealerHand) : handToString(dealerHand.slice(0, 1)) + ' `  `'}`);
 };
 
 const handToString = (hand) => {
