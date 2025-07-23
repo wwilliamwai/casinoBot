@@ -76,7 +76,7 @@ const createEmbedElement = (deck, playerHand, dealerHand, interaction) => {
 		.setTitle('BlackJack')
 		.setTimestamp(Date.now())
 		.setDescription(`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n
-Dealer | ${dealerHand[0][1]}+\n${handToString(dealerHand.slice(0, 1))}`);
+Dealer | ${faceCardsToNum(dealerHand[0][1])}+\n${handToString(dealerHand.slice(0, 1))} \`  \``);
 };
 
 const handToString = (hand) => {
@@ -86,20 +86,32 @@ const handToString = (hand) => {
 };
 
 const sumOfHand = (hand) => {
-	const sum = hand.reduce((acc, currentCard) => {
-		return acc + faceCardsToNum(currentCard[1]);
-	}, 0);
-	if (sum > 21 && deck.some((currentCard) => currentCard[1] === 'ace')) {
-		return sum - 9;
+	let numAces = 0;
+	let sum = 0;
+
+	hand.forEach(currentCard => {
+		sum += faceCardsToNum(currentCard[1]);
+
+		// keeps tracks of number of aces
+		if (currentCard[1] === 'ace') {
+			numAces++;
+		}
+	});
+
+	while (sum > 21 && numAces > 0) {
+		sum -= 10;
+		numAces--;
 	}
-	else {
-		return sum;
-	}
+
+	return sum;
 };
 
 const faceCardsToNum = (cardVal) => {
-	if (cardVal === 'jack' || cardVal === 'queen' || cardVal === 'king' || cardVal === 'ace') {
+	if (cardVal === 'jack' || cardVal === 'queen' || cardVal === 'king') {
 		return 10;
+	}
+	else if (cardVal === 'ace') {
+		return 11;
 	}
 	else {
 		return cardVal;
