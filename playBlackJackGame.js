@@ -19,6 +19,8 @@ async function playBlackJackGame(interaction) {
 	// send the embeded message
 	const response = await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
 
+	let playerSum = sumOfHand(playerHand);
+	let dealerSum = sumOfHand(dealerHand);
 	// if the player starts off with 21, run this code to the end of the game
 	if (playerSum === 21) {
 		while (dealerSum < 17 || dealerSum < playerSum) {
@@ -33,9 +35,6 @@ async function playBlackJackGame(interaction) {
 	// create the filter and the collector to take
 	const filter = (i) => i.user.id === interaction.user.id;
 	const collector = response.resource.message.createMessageComponentCollector({ filter, time: 30_000 });
-
-	let playerSum = sumOfHand(playerHand);
-	let dealerSum = sumOfHand(dealerHand);
 
 	collector.on('collect', async i => {
 		if (i.customId === 'hit') {
