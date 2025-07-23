@@ -5,12 +5,7 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('blackjack')
-		.setDescription('Play a game of blackjack')
-		.addIntegerOption(option =>
-			option.setName('bet')
-				.setDescription('set the amount to bet')
-				.setRequired(true),
-		),
+		.setDescription('Play a game of blackjack'),
 	async execute(interaction) {
 		// create the cards for the blackJack game
 		const deck = new Cards(false);
@@ -23,12 +18,13 @@ module.exports = {
 		dealerHand.push(deck.takeTopCard());
 
 		// create the embed element
-		const gameEmbed = createEmbedElement(playerHand, dealerHand, interaction, false);
+		const gameEmbed = createEmbedElement({ playerHand, dealerHand, interaction });
 		// create row item
 		const row = createHitStandButtons();
 		// send the embeded message
 		const response = await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
 
+		// create the filter and the collector to take
 		const filter = (i) => i.user.id === interaction.user.id;
 		const collector = response.resource.message.createMessageComponentCollector({ filter, time: 30_000 });
 
@@ -36,7 +32,7 @@ module.exports = {
 			if (i.customId === 'hit') {
 				collector.resetTimer();
 				playerHand.push(deck.takeTopCard());
-				await updateEmbed(playerHand, dealerHand, row, interaction, false);
+				await updateEmbed({ playerHand, dealerHand, row, interaction, isDealerTurn: false });
 				const playerSum = sumOfHand(playerHand);
 				// check if the player busted after hitting
 				if (playerSum > 21) {
@@ -51,7 +47,8 @@ module.exports = {
 			}
 			if (i.customId === 'stand') {
 				collector.resetTimer();
-				while (sumOfHand(dealerHand) < 17 && sumOfHand(dealerHand) < sumOfHand(playerHand)) {
+				dealerSum = sumOfHand(dealerHand);
+				while (dealerSum < 17 && dealerSum < sumOfHand(playerHand)) {
 					dealerHand.push(deck.takeTopCard());
 				};
 				collector.stop('dealer-end');
@@ -59,19 +56,19 @@ module.exports = {
 		});
 		collector.on('end', async (collected, reason) => {
 			if (reason === 'time') {
-				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await updateEmbed({ playerHand, dealerHand, row, interaction });
 				await interaction.editReply({ content: 'dingus. you took more than 30 seconds to make a move', components: [] });
 			}
 			if (reason === 'bust') {
-				await updateEmbed(playerHand, dealerHand, row, interaction, true);
-				await interaction.editReply({ content: 'busted!\u{274C}', components: [] });
+				await updateEmbed({ playerHand, dealerHand, row, interaction });
+				await interaction.editReply({ content: 'busted! \u{274C}', components: [] });
 			}
 			if (reason === 'got21') {
-				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await updateEmbed({ playerHand, dealerHand, row, interaction });
 				await dictateGameEnd(playerHand, dealerHand, interaction);
 			}
 			if (reason === 'dealer-end') {
-				await updateEmbed(playerHand, dealerHand, row, interaction, true);
+				await updateEmbed({ playerHand, dealerHand, row, interaction });
 				await dictateGameEnd(playerHand, dealerHand, interaction);
 			}
 		});
@@ -93,9 +90,13 @@ const dictateGameEnd = async (playerHand, dealerHand, interaction) => {
 		await interaction.editReply({ content: 'omg you beat the dealer so cool :3', components: [] });
 	}
 };
-const updateEmbed = async (playerHand, dealerHand, row, interaction, dealerTurn) => {
+const updateEmbed = async ({ playerHand, dealerHand, row, interaction, isDealerTurn = true }) => {
 	// create a new embed object
-	const updatedEmbed = createEmbedElement(playerHand, dealerHand, interaction, dealerTurn);
+	const updatedEmbed = createEmbedElement({
+		playerHand: playerHand,
+		dealerHand: dealerHand,
+		interaction: interaction,
+		isDealerTurn: isDealerTurn });
 
 	await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
 };
@@ -114,7 +115,7 @@ const createHitStandButtons = () => {
 	);
 };
 
-const createEmbedElement = (playerHand, dealerHand, interaction, dealerTurn) => {
+const createEmbedElement = ({ playerHand, dealerHand, interaction, isDealerTurn = false }) => {
 	return new EmbedBuilder()
 		.setColor(0x163d0f)
 		.setAuthor({
@@ -124,7 +125,7 @@ const createEmbedElement = (playerHand, dealerHand, interaction, dealerTurn) => 
 		.setTitle('BlackJack')
 		.setTimestamp(Date.now())
 		.setDescription(`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n
-Dealer | ${faceCardsToNum(dealerTurn ? sumOfHand(dealerHand) : dealerHand[0][1] + '+')}\n${dealerTurn ?
+Dealer | ${faceCardsToNum(isDealerTurn ? sumOfHand(dealerHand) : dealerHand[0][1] + '+')}\n${isDealerTurn ?
 	 handToString(dealerHand) : handToString(dealerHand.slice(0, 1)) + ' `  `'}`);
 };
 
