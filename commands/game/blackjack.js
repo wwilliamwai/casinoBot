@@ -27,30 +27,43 @@ module.exports = {
 		// create row item
 		const row = createHitStandButtons();
 		// send the embeded message
-		await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
+		const response = await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
 
-		/* const filter = (i) => i.user.id === interaction.user.id;
-
-		const collector = response.resource.message.createMessageComponentCollector({ componentType: ComponentType.Button, filter, time: 30_000 });
+		const filter = (i) => i.user.id === interaction.user.id;
+		const collector = response.resource.message.createMessageComponentCollector({ filter, time: 30_000 });
 
 		collector.on('collect', async i => {
 			if (i.customId === 'hit') {
-				i.reply('you clicked on hit');
-				return;
+				playerHand.push(deck.takeTopCard());
+				await updateEmbed(deck, playerHand, dealerHand, row, interaction);
+
+				// check if the player busted after hitting
+				if (sumOfHand(playerHand) > 21) {
+					collector.stop('bust');
+				}
+				else {
+					await i.deferUpdate();
+				}
 			}
-		}); */
+		});
+		collector.on('end', async (collected, reason) => {
+			if (reason === 'time') {
+				await interaction.editReply({ content: 'You took longer than 30 seconds to make a move. :3', components: [] });
+			}
+			if (reason === 'bust') {
+				await interaction.editReply({ content: 'You busted!', components: [] });
+			}
+		});
 	},
 };
 
 // helper methods
-/* const updateEmbedOnHit = async (deck, playerHand, dealerHand, interaction) => {
-	playerHand.push(deck.takeTopCard());
+const updateEmbed = async (deck, playerHand, dealerHand, row, interaction) => {
 	// create a new embed object
 	const updatedEmbed = createEmbedElement(deck, playerHand, dealerHand, interaction);
-	const buttons = createHitStayButtons();
 
-	await interaction.editReply({ embeds: [updatedEmbed], components: [buttons] });
-}; */
+	await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
+};
 
 const createHitStandButtons = () => {
 	// create row item
