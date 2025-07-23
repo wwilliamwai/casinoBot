@@ -28,12 +28,21 @@ module.exports = {
 		const filter = (i) => i.user.id === interaction.user.id;
 		const collector = response.resource.message.createMessageComponentCollector({ filter, time: 30_000 });
 
+		let playerSum = sumOfHand(playerHand);
+		let dealerSum = sumOfHand(dealerHand);
+
 		collector.on('collect', async i => {
+			// if player somehow already has a value of 21, then they just stand
+			if (playerSum === 21) {
+				collector.stop('got21');
+			}
+
 			if (i.customId === 'hit') {
 				collector.resetTimer();
 				playerHand.push(deck.takeTopCard());
 				await updateEmbed({ playerHand, dealerHand, row, interaction, isDealerTurn: false });
-				const playerSum = sumOfHand(playerHand);
+				playerSum = sumOfHand(playerHand);
+
 				// check if the player busted after hitting
 				if (playerSum > 21) {
 					collector.stop('bust');
@@ -47,50 +56,57 @@ module.exports = {
 			}
 			if (i.customId === 'stand') {
 				collector.resetTimer();
-				dealerSum = sumOfHand(dealerHand);
-				while (dealerSum < 17 && dealerSum < sumOfHand(playerHand)) {
+
+				while (dealerSum < 17 || dealerSum < playerSum) {
 					dealerHand.push(deck.takeTopCard());
+					dealerSum = sumOfHand(dealerHand);
 				};
 				collector.stop('dealer-end');
 			}
 		});
 		collector.on('end', async (collected, reason) => {
 			if (reason === 'time') {
-				await updateEmbed({ playerHand, dealerHand, row, interaction });
-				await interaction.editReply({ content: 'dingus. you took more than 30 seconds to make a move', components: [] });
+				await updateEmbed({ content: 'dingus. you took more than 30 seconds to make a move',
+					 playerHand, dealerHand, row, interaction });
 			}
 			if (reason === 'bust') {
-				await updateEmbed({ playerHand, dealerHand, row, interaction });
-				await interaction.editReply({ content: 'busted! \u{274C}', components: [] });
+				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, interaction });
 			}
 			if (reason === 'got21') {
-				await updateEmbed({ playerHand, dealerHand, row, interaction });
-				await dictateGameEnd(playerHand, dealerHand, interaction);
+				// then the house still has to roll to see if they can tie
+				while (dealerSum < 17 || dealerSum < playerSum) {
+					dealerHand.push(deck.takeTopCard());
+					dealerSum = sumOfHand(dealerHand);
+				};
+				await displayGameResult(playerHand, dealerHand, row, interaction);
 			}
 			if (reason === 'dealer-end') {
-				await updateEmbed({ playerHand, dealerHand, row, interaction });
-				await dictateGameEnd(playerHand, dealerHand, interaction);
+				await displayGameResult(playerHand, dealerHand, row, interaction);
 			}
 		});
 	},
 };
 
 // helper methods
-const dictateGameEnd = async (playerHand, dealerHand, interaction) => {
+const displayGameResult = async (playerHand, dealerHand, row, interaction) => {
+	await updateEmbed({ playerHand: playerHand, dealerHand: dealerHand, row: row, interaction: interaction });
+	let message = '';
+
 	const playerSum = sumOfHand(playerHand);
 	const dealerSum = sumOfHand(dealerHand);
 
-	if (playerSum == 21 && dealerSum == 21) {
-		await interaction.editReply({ content: 'Wait. You guys drew? what the sigma!', components: [] });
+	if (playerSum == dealerSum) {
+		message = 'Wait. You guys drew? what the sigma!';
 	}
 	else if (dealerSum <= 21 && dealerSum > playerSum) {
-		await interaction.editReply({ content: 'you lost unlucky tbh', components: [] });
+		message = 'you lost unlucky tbh';
 	}
 	else {
-		await interaction.editReply({ content: 'omg you beat the dealer so cool :3', components: [] });
+		message = 'omg you beat the house so cool :3';
 	}
+	await interaction.editReply({ content: message, components: [] });
 };
-const updateEmbed = async ({ playerHand, dealerHand, row, interaction, isDealerTurn = true }) => {
+const updateEmbed = async ({ content = null, playerHand, dealerHand, row, interaction, isDealerTurn = true }) => {
 	// create a new embed object
 	const updatedEmbed = createEmbedElement({
 		playerHand: playerHand,
@@ -98,7 +114,7 @@ const updateEmbed = async ({ playerHand, dealerHand, row, interaction, isDealerT
 		interaction: interaction,
 		isDealerTurn: isDealerTurn });
 
-	await interaction.editReply({ embeds: [updatedEmbed], components: [row] });
+	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
 };
 
 const createHitStandButtons = () => {
@@ -116,6 +132,13 @@ const createHitStandButtons = () => {
 };
 
 const createEmbedElement = ({ playerHand, dealerHand, interaction, isDealerTurn = false }) => {
+	const dealerValue = isDealerTurn
+		? sumOfHand(dealerHand)
+		: `${faceCardsToNum(dealerHand[0][1])}+`;
+	const dealerCards = isDealerTurn
+		? handToString(dealerHand)
+		: handToString(dealerHand.slice(0, 1)) + ' `  `';
+
 	return new EmbedBuilder()
 		.setColor(0x163d0f)
 		.setAuthor({
@@ -124,9 +147,8 @@ const createEmbedElement = ({ playerHand, dealerHand, interaction, isDealerTurn 
 		})
 		.setTitle('BlackJack')
 		.setTimestamp(Date.now())
-		.setDescription(`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n
-Dealer | ${faceCardsToNum(isDealerTurn ? sumOfHand(dealerHand) : dealerHand[0][1] + '+')}\n${isDealerTurn ?
-	 handToString(dealerHand) : handToString(dealerHand.slice(0, 1)) + ' `  `'}`);
+		.setDescription(
+			`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\nDealer | ${dealerValue}\n${dealerCards}`);
 };
 
 const handToString = (hand) => {
@@ -139,14 +161,13 @@ const sumOfHand = (hand) => {
 	let numAces = 0;
 	let sum = 0;
 
-	hand.forEach(currentCard => {
-		sum += faceCardsToNum(currentCard[1]);
-
-		// keeps tracks of number of aces
-		if (currentCard[1] === 'ace') {
+	for (const card of hand) {
+		const value = faceCardsToNum(card[1]);
+		sum += value;
+		if (card[1] === 'ace') {
 			numAces++;
 		}
-	});
+	}
 
 	while (sum > 21 && numAces > 0) {
 		sum -= 10;
