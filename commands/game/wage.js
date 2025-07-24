@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,37 +10,30 @@ module.exports = {
 		.setName('wage')
 		.setDescription('Earn you wage for the day.'),
 	async execute(interaction) {
-		fs.readFile(userDataPath, 'utf8', (err, data) => {
-			if (err) {
-				console.error('Error reading file:', err);
-				return;
-			}
-
+		try {
+			const data = await fs.promises.readFile(userDataPath, 'utf8');
 			const userData = JSON.parse(data);
 
-			const interactorIndex = userData.users.findIndex(targetUser => targetUser.userID === interaction.user.id);
+			const interactionUserID = interaction.user.id;
+			const user = userData.users.find((targetUser) => targetUser.userID === interactionUserID);
 
-			if (interactorIndex != -1) {
-				userData.users[interactorIndex].balance += 10;
+			if (user) {
+				user.balance += 10;
 			}
 			else {
 				userData.users.push({
-					userID: interaction.user.id,
+					userID: interactionUserID,
 					balance: 10,
 					blackJackStreak: 0,
 				});
 			}
 
-			const updatedUserData = JSON.stringify(userData, null, 2);
-
-			fs.writeFile(userDataPath, updatedUserData, 'utf8', (err) => {
-				if (err) {
-					console.error('Error writing file:', err);
-					return;
-				}
-			});
-
-			interaction.reply(`${interaction.user} has earned 10 more dollars!`);
-		});
+			await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
+			await interaction.reply(`${interaction.user} has earned 10 more dollars!`);
+		}
+		catch (error) {
+			console.error('Error handling wage command', error);
+			await interaction.reply({ content: 'Something went wrong while processing your wage', flags: MessageFlags.Ephemeral });
+		}
 	},
 };
