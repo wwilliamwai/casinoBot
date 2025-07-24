@@ -23,7 +23,7 @@ async function playBlackJackGame(interaction) {
 	let dealerSum = sumOfHand(dealerHand);
 	// if the player starts off with 21, run this code to the end of the game
 	if (playerSum === 21) {
-		while (dealerSum < 17 || dealerSum < playerSum) {
+		while (dealerSum < 17) {
 			dealerHand.push(deck.takeTopCard());
 			dealerSum = sumOfHand(dealerHand);
 		}
@@ -32,13 +32,12 @@ async function playBlackJackGame(interaction) {
 		// Stop here to prevent collector from starting and so it doesn't bug
 	}
 
-	// create the filter and the collector to take
+	// create the collector to take player input
 	const collector = response.resource.message.createMessageComponentCollector({ time: 30_000 });
 
 	collector.on('collect', async i => {
 		if (i.user.id != interaction.user.id) {
-			console.log('so basically the wrong user pressed the thing bro');
-			await i.reply({ content: 'wrong game bro. kys.', ephemeral: true });
+			await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
 			return;
 		}
 		if (i.customId === 'hit') {
@@ -61,7 +60,7 @@ async function playBlackJackGame(interaction) {
 		if (i.customId === 'stand') {
 			collector.resetTimer();
 
-			while (dealerSum < 17 || dealerSum < playerSum) {
+			while (dealerSum < 17) {
 				dealerHand.push(deck.takeTopCard());
 				dealerSum = sumOfHand(dealerHand);
 			};
@@ -78,7 +77,7 @@ async function playBlackJackGame(interaction) {
 		}
 		if (reason === 'got21') {
 			// then the house still has to roll to see if they can tie
-			while (dealerSum < 17 || dealerSum < playerSum) {
+			while (dealerSum < playerSum) {
 				dealerHand.push(deck.takeTopCard());
 				dealerSum = sumOfHand(dealerHand);
 			};
