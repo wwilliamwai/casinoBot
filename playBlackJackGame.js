@@ -77,7 +77,7 @@ async function playBlackJackGame(interaction) {
 		}
 		if (reason === 'got21') {
 			// then the house still has to roll to see if they can tie
-			while (dealerSum < playerSum) {
+			while (dealerSum < 17) {
 				dealerHand.push(deck.takeTopCard());
 				dealerSum = sumOfHand(dealerHand);
 			};
