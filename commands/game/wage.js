@@ -5,6 +5,7 @@ const path = require('path');
 const userDataPath = path.join(__dirname, '../../userData.json');
 
 module.exports = {
+	cooldown: 2,
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('wage')

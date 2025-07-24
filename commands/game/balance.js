@@ -21,7 +21,7 @@ module.exports = {
 				interaction.reply(`${interaction.user} has $${user.balance} in their balance.`);
 			}
 			else {
-				interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do /wage to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/wage** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

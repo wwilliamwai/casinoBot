@@ -1,7 +1,8 @@
 const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const Cards = require('cards.js');
 
-async function playBlackJackGame(interaction) {
+async function playBlackJackGame(betAmount, interaction) {
+	console.log('at the start of the game the bet amount is ' + betAmount);
 	// create the cards for the blackJack game
 	const deck = new Cards(false);
 	const dealerHand = [];
@@ -27,72 +28,78 @@ async function playBlackJackGame(interaction) {
 			dealerHand.push(deck.takeTopCard());
 			dealerSum = sumOfHand(dealerHand);
 		}
-		await displayGameResult(playerHand, dealerHand, row, interaction);
-		return;
+		return await displayGameResult(playerHand, dealerHand, row, betAmount, interaction);
 		// Stop here to prevent collector from starting and so it doesn't bug
 	}
 
 	// create the collector to take player input
 	const collector = response.resource.message.createMessageComponentCollector({ time: 30_000 });
 
-	collector.on('collect', async i => {
-		if (i.user.id != interaction.user.id) {
-			await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
-			return;
-		}
-		if (i.customId === 'hit') {
-			collector.resetTimer();
-			playerHand.push(deck.takeTopCard());
-			await updateEmbed({ playerHand, dealerHand, row, interaction, isDealerTurn: false });
-			playerSum = sumOfHand(playerHand);
+	return new Promise((resolve) => {
+		collector.on('collect', async i => {
+			if (i.user.id != interaction.user.id) {
+				await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
+				return;
+			}
+			if (i.customId === 'hit') {
+				collector.resetTimer();
+				playerHand.push(deck.takeTopCard());
+				await updateEmbed({ playerHand, dealerHand, row, interaction, isDealerTurn: false });
+				playerSum = sumOfHand(playerHand);
 
-			// check if the player busted after hitting
-			if (playerSum > 21) {
-				collector.stop('bust');
+				// check if the player busted after hitting
+				if (playerSum > 21) {
+					collector.stop('bust');
+				}
+				else if (playerSum === 21) {
+					collector.stop('got21');
+				}
+				else {
+					await i.deferUpdate();
+				}
 			}
-			else if (playerSum === 21) {
-				collector.stop('got21');
-			}
-			else {
-				await i.deferUpdate();
-			}
-		}
-		if (i.customId === 'stand') {
-			collector.resetTimer();
+			if (i.customId === 'stand') {
+				collector.resetTimer();
 
-			while (dealerSum < 17) {
-				dealerHand.push(deck.takeTopCard());
-				dealerSum = sumOfHand(dealerHand);
-			};
-			collector.stop('dealer-end');
-		}
-	});
-	collector.on('end', async (collected, reason) => {
-		if (reason === 'time') {
-			await updateEmbed({ content: 'dingus. you took more than 30 seconds to make a move',
+				while (dealerSum < 17) {
+					dealerHand.push(deck.takeTopCard());
+					dealerSum = sumOfHand(dealerHand);
+				};
+				collector.stop('dealer-end');
+			}
+		});
+		collector.on('end', async (collected, reason) => {
+			if (reason === 'time') {
+				await updateEmbed({ content: 'dingus. you took more than 30 seconds to make a move',
 					 playerHand, dealerHand, row, interaction });
-		}
-		if (reason === 'bust') {
-			await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, interaction });
-		}
-		if (reason === 'got21') {
-			// then the house still has to roll to see if they can tie
-			while (dealerSum < 17) {
-				dealerHand.push(deck.takeTopCard());
-				dealerSum = sumOfHand(dealerHand);
-			};
-			await displayGameResult(playerHand, dealerHand, row, interaction);
-		}
-		if (reason === 'dealer-end') {
-			await displayGameResult(playerHand, dealerHand, row, interaction);
-		}
+				resolve(0);
+			}
+			if (reason === 'bust') {
+				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, interaction });
+				resolve(-betAmount);
+			}
+			if (reason === 'got21') {
+				console.log(`basically i got and the bet amount was ${betAmount}`);
+				// then the house still has to roll to see if they can tie
+				while (dealerSum < 17) {
+					dealerHand.push(deck.takeTopCard());
+					dealerSum = sumOfHand(dealerHand);
+				};
+				resolve(await displayGameResult(playerHand, dealerHand, row, betAmount, interaction));
+			}
+			if (reason === 'dealer-end') {
+				console.log(`basically i stood and the bet amount was ${betAmount}`);
+				resolve(await displayGameResult(playerHand, dealerHand, row, betAmount, interaction));
+			}
+		});
 	});
 };
 
 // helper methods
-const displayGameResult = async (playerHand, dealerHand, row, interaction) => {
+const displayGameResult = async (playerHand, dealerHand, row, betAmount, interaction) => {
 	await updateEmbed({ playerHand: playerHand, dealerHand: dealerHand, row: row, interaction: interaction });
 	let message = '';
+	let endAmount = 0;
 
 	const playerSum = sumOfHand(playerHand);
 	const dealerSum = sumOfHand(dealerHand);
@@ -102,11 +109,15 @@ const displayGameResult = async (playerHand, dealerHand, row, interaction) => {
 	}
 	else if (dealerSum <= 21 && dealerSum > playerSum) {
 		message = 'you lost unlucky tbh';
+		endAmount = -betAmount;
 	}
 	else {
 		message = 'omg you beat the house so cool :3';
+		endAmount = betAmount;
 	}
 	await interaction.editReply({ content: message, components: [] });
+	console.log(`the end amount is literally ${endAmount}`);
+	return endAmount;
 };
 const updateEmbed = async ({ content = null, playerHand, dealerHand, row, interaction, isDealerTurn = true }) => {
 	// create a new embed object
