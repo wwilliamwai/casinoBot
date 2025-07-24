@@ -33,10 +33,14 @@ async function playBlackJackGame(interaction) {
 	}
 
 	// create the filter and the collector to take
-	const filter = (i) => i.user.id === interaction.user.id;
-	const collector = response.resource.message.createMessageComponentCollector({ filter, time: 30_000 });
+	const collector = response.resource.message.createMessageComponentCollector({ time: 30_000 });
 
 	collector.on('collect', async i => {
+		if (i.user.id != interaction.user.id) {
+			console.log('so basically the wrong user pressed the thing bro');
+			await i.reply({ content: 'wrong game bro. kys.', ephemeral: true });
+			return;
+		}
 		if (i.customId === 'hit') {
 			collector.resetTimer();
 			playerHand.push(deck.takeTopCard());
@@ -147,7 +151,7 @@ const createEmbedElement = ({ playerHand, dealerHand, interaction, isDealerTurn 
 		.setTitle('BlackJack')
 		.setTimestamp(Date.now())
 		.setDescription(
-			`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\nDealer | ${dealerValue}\n${dealerCards}`);
+			`You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n\nDealer | ${dealerValue}\n${dealerCards}`);
 };
 
 const handToString = (hand) => {
