@@ -22,8 +22,10 @@ module.exports = {
 				user.balance += 10;
 			}
 			else {
+				console.log(interaction.user);
 				userData.users.push({
 					userID: interactionUserID,
+					globalName: interaction.user.globalName,
 					balance: 10,
 					blackJackStreak: 0,
 				});
