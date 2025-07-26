@@ -14,8 +14,7 @@ module.exports = {
 			const data = await fs.promises.readFile(userDataPath, 'utf8');
 			const userData = JSON.parse(data);
 
-			const interactionUserID = interaction.user.id;
-			const user = userData.users.find((targetUser) => targetUser.userID === interactionUserID);
+			const user = userData.users.find((targetUser) => targetUser.userID === interaction.user.id);
 
 			if (user) {
 				interaction.reply(`${interaction.user} has $${user.balance} in their balance.`);

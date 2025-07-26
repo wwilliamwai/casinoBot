@@ -74,7 +74,7 @@ async function playBlackJackGame({ betAmount = 0, betWinStreak = null, interacti
 				resolve(0);
 			}
 			if (reason === 'bust') {
-				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, betWinStreak: 0, interaction });
+				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, betWinStreak: betWinStreak != null ? 0 : null, interaction });
 				resolve(-betAmount);
 			}
 			if (reason === 'got21') {
@@ -107,12 +107,12 @@ const displayGameResult = async (playerHand, dealerHand, row, betWinStreak, betA
 	else if (dealerSum <= 21 && dealerSum > playerSum) {
 		message = 'you lost unlucky tbh';
 		endAmount = -betAmount;
-		winStreak = 0;
+		winStreak = winStreak != null ? 0 : null;
 	}
 	else {
 		message = 'omg you beat the house so cool :3';
 		endAmount = betAmount;
-		winStreak++;
+		winStreak = winStreak != null ? winStreak + 1 : null;
 	}
 	await updateEmbed({ playerHand: playerHand, dealerHand: dealerHand, row: row, betWinStreak: winStreak, interaction: interaction });
 	await interaction.editReply({ content: message, components: [] });

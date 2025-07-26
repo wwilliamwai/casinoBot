@@ -30,7 +30,7 @@ module.exports = {
 const createEmbedElement = ((userData) => {
 	let leaderboard = '';
 	userData.forEach((user, index) => {
-		leaderboard += `**(#${index + 1}) ${user.globalName}** - $${user.balance}\n`;
+		leaderboard += `**(#${index + 1}) ${user.name}** - $${user.balance}\n`;
 	});
 	return new EmbedBuilder()
 		.setColor(0x163d0f)
