@@ -69,9 +69,9 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 			}
 		});
 		collector.on('end', async (collected, reason) => {
-			if (reason === 'messageDelete' && betAmount === 0) {
-				interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft' );
+			if (reason === 'messageDelete') {
 				activeBlackJackUsers.delete(interaction.user.id);
+				if (betAmount != 0) interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft' );
 				resolve(-betAmount);
 			}
 			if (reason === 'time') {
