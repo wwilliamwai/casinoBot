@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags, ComponentType } = require('discord.js');
 const Cards = require('cards.js');
 const { activeGames } = require('./blackJackState');
 
@@ -34,7 +34,9 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 	}
 
 	// create the collector to take player input
-	const collector = response.resource.message.createMessageComponentCollector({ time: 300_000 });
+	const collector = response.resource.message.createMessageComponentCollector({
+		componentType: ComponentType.Button,
+		time: 300_000 });
 
 	return new Promise((resolve) => {
 		collector.on('collect', async i => {
@@ -84,6 +86,7 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 			}
 			if (reason === 'bust') {
 				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, userWinStreak: userWinStreak != null ? 0 : null, interaction });
+				activeGames.delete(interaction.user.id);
 				resolve(-betAmount);
 			}
 			if (reason === 'got21') {
@@ -92,9 +95,11 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 					dealerHand.push(deck.takeTopCard());
 					dealerSum = sumOfHand(dealerHand);
 				};
+				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
 			}
 			if (reason === 'dealer-end') {
+				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
 			}
 		});

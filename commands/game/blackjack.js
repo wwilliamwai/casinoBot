@@ -35,7 +35,7 @@ module.exports = {
 
 		// if they didn't bet, then play a normal blackjack game
 		if (!betAmount || betAmount === 0) {
-			await playBlackJackGame({ betAmount, interaction });
+			await playBlackJackGame({ betAmount: 0, interaction });
 			return;
 		}
 		// if they did bet, then play a blackjack game with money on the line

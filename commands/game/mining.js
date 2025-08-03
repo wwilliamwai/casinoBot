@@ -11,7 +11,7 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('mining')
-		.setDescription('work to make 50 dollars through hard mining'),
+		.setDescription('work to make 100 dollars through hard mining'),
 	async execute(interaction) {
 		try {
 			const data = await fs.promises.readFile(userDataPath, 'utf8');
@@ -23,7 +23,7 @@ module.exports = {
 			if (user) {
 				const didMine = await mining(interaction);
 				if (didMine) {
-					user.balance += 50;
+					user.balance += 100;
 					await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
 				}
 			}
