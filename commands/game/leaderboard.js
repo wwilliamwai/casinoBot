@@ -16,6 +16,7 @@ module.exports = {
 			const userData = JSON.parse(data);
 
 			sortedData = userData.users.toSorted((a, b) => b.balance - a.balance);
+
 			const leaderboardEmbed = createEmbedElement(sortedData);
 			await interaction.reply({ content: '', embeds: [leaderboardEmbed] });
 		}

@@ -58,6 +58,7 @@ module.exports = {
 							name: name,
 							balance: 0,
 							blackJackStreak: 0,
+							lastWageDate: yesterday,
 						};
 						userData.users.push(receiver);
 					}

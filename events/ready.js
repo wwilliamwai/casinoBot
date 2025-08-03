@@ -1,5 +1,4 @@
 const { Events } = require('discord.js');
-const { generalId } = require('../config.json');
 const readline = require('readline');
 
 module.exports = {

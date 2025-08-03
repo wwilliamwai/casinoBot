@@ -2,7 +2,8 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const { playBlackJackGame } = require('../../playBlackJackGame');
+const { activeBlackJackUsers } = require('../../game/blackJackState');
+const { playBlackJackGame } = require('../../game/playBlackJackGame');
 
 const userDataPath = path.join(__dirname, '../../userData.json');
 
@@ -12,23 +13,40 @@ module.exports = {
 		.setName('all_in')
 		.setDescription('Bet all of your money on a game of blackjack!'),
 	async execute(interaction) {
+		const interactionUserID = interaction.user.id;
+		if (activeBlackJackUsers.has(interactionUserID)) {
+			return interaction.reply({ content: 'you already have a game going bro', flags: MessageFlags.Ephemeral });
+		}
+
+		activeBlackJackUsers.add(interactionUserID);
 		try {
 			const data = await fs.promises.readFile(userDataPath, 'utf8');
 			const userData = JSON.parse(data);
 
-			const user = userData.users.find((targetUser) => targetUser.userID === interaction.user.id);
+			const user = userData.users.find((targetUser) => targetUser.userID === interactionUserID);
 
 			if (user) {
-				await playBettingGame(user.balance, user, interaction);
-				await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
+				// to fix bug if the data changes mid game or like if 2 players at the same time.
+				// has the endAmount and the most updated blackjackstreak
+				const gameEndData = await playBettingGame(user.balance, user, interaction);
+				const mostRecentData = await fs.promises.readFile(userDataPath, 'utf8');
+				const mostRecentUserData = JSON.parse(mostRecentData);
+
+				const upToDateUser = mostRecentUserData.users.find((targetUser) => targetUser.userID === interactionUserID);
+				upToDateUser.balance += gameEndData[0];
+				upToDateUser.blackJackStreak = gameEndData[1];
+				await fs.promises.writeFile(userDataPath, JSON.stringify(mostRecentUserData, null, 2));
 			}
 			else {
-				await interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/wage** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/labor** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {
 			console.error('Error handling blackjack command', error);
 			await interaction.reply({ content: 'Something went wrong with the blackjack game', flags: MessageFlags.Ephemeral });
+		}
+		finally {
+			activeBlackJackUsers.delete(interactionUserID);
 		}
 	},
 };
@@ -45,11 +63,13 @@ const playBettingGame = async (betAmount, user, interaction) => {
 	else {
 		const endAmount = await playBlackJackGame({ betAmount, betWinStreak: user.blackJackStreak, interaction });
 		if (endAmount > 0) {
-			user.blackJackStreak++;
+			return [endAmount, ++user.blackJackStreak];
 		}
-		else if (endAmount < 0) {
-			user.blackJackStreak = 0;
+		else if (endAmount === 0) {
+			return [endAmount, user.blackJackStreak];
 		}
-		user.balance += endAmount;
+		else {
+			return [endAmount, 0];
+		}
 	}
 };
