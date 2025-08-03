@@ -1,5 +1,5 @@
-const activeBlackJackUsers = new Set();
+const activeGames = new Map();
 
 module.exports = {
-	activeBlackJackUsers,
+	activeGames,
 };

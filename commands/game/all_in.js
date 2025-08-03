@@ -2,7 +2,7 @@ const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const { activeBlackJackUsers } = require('../../game/blackJackState');
+const { activeGames } = require('../../game/blackJackState');
 const { playBlackJackGame } = require('../../game/playBlackJackGame');
 
 const userDataPath = path.join(__dirname, '../../userData.json');
@@ -14,11 +14,19 @@ module.exports = {
 		.setDescription('Bet all of your money on a game of blackjack!'),
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
-		if (activeBlackJackUsers.has(interactionUserID)) {
-			return interaction.reply({ content: 'you already have a game going bro', flags: MessageFlags.Ephemeral });
+		if (activeGames.has(interactionUserID)) {
+			try {
+				const existingGame = activeGames.get(interactionUserID).resource.message;
+				await existingGame.reply({ content: `${interaction.user} you already have this game going bro` });
+			}
+			catch (error) {
+				console.error('an error occured when reaching the existing game', error);
+			}
+			interaction.reply({ content: '...', flags: MessageFlags.Ephemeral });
+			return;
 		}
 
-		activeBlackJackUsers.add(interactionUserID);
+		activeBlackJackUsers.set(interactionUserID);
 		try {
 			const data = await fs.promises.readFile(userDataPath, 'utf8');
 			const userData = JSON.parse(data);
@@ -46,7 +54,7 @@ module.exports = {
 			await interaction.reply({ content: 'Something went wrong with the blackjack game', flags: MessageFlags.Ephemeral });
 		}
 		finally {
-			activeBlackJackUsers.delete(interactionUserID);
+			activeGames.delete(interactionUserID);
 		}
 	},
 };

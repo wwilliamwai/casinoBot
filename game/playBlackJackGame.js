@@ -1,6 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const Cards = require('cards.js');
-const { activeBlackJackUsers } = require('./blackJackState');
+const { activeGames } = require('./blackJackState');
 
 async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interaction }) {
 	// create the cards for the blackJack game
@@ -19,6 +19,7 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 	const row = createHitStandButtons();
 	// send the embeded message
 	const response = await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
+	activeGames.set(interaction.user.id, response);
 
 	let playerSum = sumOfHand(playerHand);
 	let dealerSum = sumOfHand(dealerHand);
@@ -70,13 +71,15 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 		});
 		collector.on('end', async (collected, reason) => {
 			if (reason === 'messageDelete') {
-				activeBlackJackUsers.delete(interaction.user.id);
-				if (betAmount != 0) interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft' );
+				activeGames.delete(interaction.user.id);
+				if (betAmount != 0) {
+					interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
+				}
 				resolve(-betAmount);
 			}
 			if (reason === 'time') {
 				await updateEmbed({ content: 'yo you took too long bro. it\'s been 5 whole minutes!', playerHand, dealerHand, row, userWinStreak: userWinStreak != null ? 0 : null, interaction });
-				activeBlackJackUsers.delete(interaction.user.id);
+				activeGames.delete(interaction.user.id);
 				resolve(-betAmount);
 			}
 			if (reason === 'bust') {

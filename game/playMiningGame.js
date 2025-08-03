@@ -26,7 +26,7 @@ async function mining(interaction) {
 		let numReactions = 0;
 
 		return new Promise((resolve) => {
-			collector.on('collect', (reaction, user) => {
+			collector.on('collect', () => {
 				numReactions++;
 				if (numReactions >= 2) {
 					collector.stop('clickedEnough');
