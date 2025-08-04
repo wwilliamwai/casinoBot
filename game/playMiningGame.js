@@ -18,17 +18,16 @@ async function mining(interaction) {
 
 	return new Promise((resolve) => {
 		let timesClicked = 0;
-		let oreString = '';
+
 		collector.on('collect', async i => {
 			if (i.customId === 'mine') {
 				collector.resetTimer();
 				timesClicked++;
-				oreString += '🪨';
 
 				await i.deferUpdate();
-				await interaction.editReply({ content: `click the mine button 3 times! ${oreString}`, components: [row] });
 
 				if (timesClicked >= 3) {
+					await interaction.editReply({ content: 'click the mine button 3 times! 🪨🪨🪨', components: [row] });
 					collector.stop('clickedEnough');
 				}
 			}
@@ -39,7 +38,7 @@ async function mining(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedEnough') {
-				await interaction.editReply({ content: `${oreString} you earned $100 from mining!`, components: [] });
+				await interaction.editReply({ content: '🪨🪨🪨 you earned $100 from mining!', components: [] });
 				resolve(true);
 			}
 		});

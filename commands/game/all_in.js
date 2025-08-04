@@ -26,7 +26,7 @@ module.exports = {
 			return;
 		}
 
-		activeBlackJackUsers.set(interactionUserID);
+		activeGames.set(interactionUserID, null);
 		try {
 			const data = await fs.promises.readFile(userDataPath, 'utf8');
 			const userData = JSON.parse(data);

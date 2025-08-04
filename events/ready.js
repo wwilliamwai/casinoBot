@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+const { Events, ActivityType } = require('discord.js');
 const readline = require('readline');
 
 module.exports = {
@@ -6,6 +6,7 @@ module.exports = {
 	once: true,
 	execute(client) {
 		console.log(`Ready! Logged in as ${client.user.tag}`);
+		client.user.setActivity('probably being worked on', { type: ActivityType.Custom, state: 'ready and online!' });
 
 		// setup a way to type in general chat through the vscode terminal
 		const rl = readline.createInterface({
