@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 
 async function mining(interaction) {
 	const row = new ActionRowBuilder().addComponents(
@@ -32,8 +32,11 @@ async function mining(interaction) {
 			}
 		});
 		collector.on('end', async (collected, reason) => {
+			if (reason === 'messageDelete') {
+				resolve(false);
+			}
 			if (reason === 'time') {
-				await interaction.editReply({ content: 'sorry you took too long to mine' });
+				await interaction.editReply({ content: 'sorry you took too long to mine', components: [] });
 				resolve(false);
 			}
 			if (reason === 'clickedEnough') {
