@@ -32,10 +32,10 @@ module.exports = {
 				if (didMine) {
 					const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
 					// converting today's date into yesterday's date.
-					const now = Date.now();
+					const now = new Date();
 					now.setDate(now.getDate() - 1);
 					// 'YYYY-MM-DD'
-					const yesterday = now.toLocaleString('en-CA');
+					const yesterday = now.toLocaleDateString('en-CA');
 					userData.users.push({
 						userID: interactionUserID,
 						name: name,
@@ -48,8 +48,8 @@ module.exports = {
 			}
 		}
 		catch (error) {
-			console.error('Error handling labor command', error);
-			await interaction.reply({ content: 'Something went wrong while processing your labor', flags: MessageFlags.Ephemeral });
+			console.error('Error handling mining command', error);
+			await interaction.reply({ content: 'Something went wrong while processing your mining', flags: MessageFlags.Ephemeral });
 		}
 	},
 };

@@ -22,14 +22,14 @@ module.exports = {
 
 			if (user) {
 				if (user.lastWageDate === today) {
-					await interaction.reply({ content: 'you\'ve already collected your wage today. do it after 12 am now.', flags: MessageFlags.Ephemeral });
+					await interaction.reply({ content: 'you\'ve already collected your daily today. do it after 12 am now.', flags: MessageFlags.Ephemeral });
 				}
 				else {
 					user.balance += 1000;
 					user.lastWageDate = today;
 
 					await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
-					await interaction.reply(`${interaction.user} has earned their **$1000 wage.** next job bro.`);
+					await interaction.reply(`${interaction.user} has earned their **$1000 daily.** nice job bro.`);
 				}
 			}
 			else {
@@ -42,12 +42,12 @@ module.exports = {
 					lastWageDate: today,
 				});
 				await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
-				await interaction.reply(`${interaction.user} has earned their **$1000 wage.** next job bro.`);
+				await interaction.reply(`${interaction.user} has earned their **$1000 daily.** next job bro.`);
 			}
 		}
 		catch (error) {
-			console.error('Error handling wage command', error);
-			await interaction.reply({ content: 'Something went wrong while processing your wage', flags: MessageFlags.Ephemeral });
+			console.error('Error handling daily command', error);
+			await interaction.reply({ content: 'Something went wrong while processing your daily', flags: MessageFlags.Ephemeral });
 		}
 	},
 };

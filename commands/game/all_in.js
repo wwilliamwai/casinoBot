@@ -37,16 +37,17 @@ module.exports = {
 				// to fix bug if the data changes mid game or like if 2 players at the same time.
 				// has the endAmount and the most updated blackjackstreak
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
+
 				const mostRecentData = await fs.promises.readFile(userDataPath, 'utf8');
 				const mostRecentUserData = JSON.parse(mostRecentData);
 
-				const upToDateUser = mostRecentUserData.users.find((targetUser) => targetUser.userID === interactionUserID);
-				upToDateUser.balance += gameEndData[0];
-				upToDateUser.blackJackStreak = gameEndData[1];
+				const updatedUser = mostRecentUserData.users.find((targetUser) => targetUser.userID === interactionUserID);
+				updatedUser.balance += gameEndData[0];
+				updatedUser.blackJackStreak = gameEndData[1];
 				await fs.promises.writeFile(userDataPath, JSON.stringify(mostRecentUserData, null, 2));
 			}
 			else {
-				await interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/labor** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

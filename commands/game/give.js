@@ -52,7 +52,13 @@ module.exports = {
 				else {
 					let receiver = userData.users.find((targetUser) => targetUser.userID === receivingUser.id);
 					const name = receivingUser.globalName ? receivingUser.globalName : receivingUser.username;
+
 					if (!receiver) {
+						const now = Date.now();
+						now.setDate(now.getDate() - 1);
+						// 'YYYY-MM-DD'
+						const yesterday = now.toLocaleString('en-CA');
+
 						receiver = {
 							userID: receivingUser.id,
 							name: name,
@@ -68,6 +74,9 @@ module.exports = {
 					await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
 					await interaction.reply(`${interaction.user} gave $${money} to ${receivingUser}!`);
 				}
+			}
+			else {
+				await interaction.reply({ content: 'wait you never earned any money. do /daily to get some!', flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

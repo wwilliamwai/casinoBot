@@ -27,7 +27,6 @@ async function mining(interaction) {
 				await i.deferUpdate();
 
 				if (timesClicked >= 3) {
-					await interaction.editReply({ content: 'click the mine button 3 times! 🪨🪨🪨', components: [row] });
 					collector.stop('clickedEnough');
 				}
 			}
@@ -38,7 +37,7 @@ async function mining(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedEnough') {
-				await interaction.editReply({ content: '🪨🪨🪨 you earned $100 from mining!', components: [] });
+				await interaction.editReply({ content: '🪨🪨🪨 you earned **$100** from mining!', components: [] });
 				resolve(true);
 			}
 		});

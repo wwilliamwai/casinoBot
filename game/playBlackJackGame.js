@@ -29,6 +29,7 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 			dealerHand.push(deck.takeTopCard());
 			dealerSum = sumOfHand(dealerHand);
 		}
+		activeGames.delete(interaction.user.id);
 		return await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction);
 		// Stop here to prevent collector from starting and so it doesn't bug
 	}
