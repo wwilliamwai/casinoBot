@@ -30,7 +30,7 @@ module.exports = {
 			}
 
 			if (user && jobComplete) {
-				user.balance += 100;
+				user.balance += 50;
 				await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
 			}
 			else if (jobComplete) {
@@ -45,7 +45,7 @@ module.exports = {
 				userData.users.push({
 					userID: interactionUserID,
 					name: name,
-					balance: 100,
+					balance: 50,
 					blackJackStreak: 0,
 					lastWageDate: yesterday,
 				});

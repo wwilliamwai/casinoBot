@@ -3,20 +3,19 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require(
 const litter = ['\u{1F9FB}', '\u{1F964}', '\u{1F37E}', '\u{1F36B}', '\u{1F9C3}'];
 
 async function cleaning(interaction) {
-	const isTrash = [false, false, false, false, false];
+	const isTrash = ['', '', '', '', ''];
 
 	for (let i = 0; i < isTrash.length; i++) {
-		if (Math.random() < 0.4) {
-			isTrash[i] = true;
+		if (Math.random() < 0.5) {
+			isTrash[i] = litter[Math.floor(Math.random() * litter.length)];
 		}
 	};
 	// if there are no pieces of trash
-	if (!isTrash.some((i) => i === true)) {
-		isTrash[Math.floor(Math.random() * isTrash.length)] = true;
+	if (!isTrash.some(Boolean)) {
+		isTrash[Math.floor(Math.random() * isTrash.length)] = litter[Math.floor(Math.random() * litter.length)];
 	}
 
-	const cleaningButtons = createCleaningButtons(isTrash);
-	const row = new ActionRowBuilder().addComponents(cleaningButtons);
+	const row = createActionRow({ isTrash });
 
 	const response = await interaction.reply({ content: 'click the pieces of trash!', components: [row], withResponse: true });
 
@@ -28,20 +27,21 @@ async function cleaning(interaction) {
 		time: 45_000 });
 
 	const numTrash = isTrash.filter(Boolean).length;
-	const uniquetrashID = [];
+	const collectedTrashID = [];
 
 	return new Promise((resolve) => {
 		collector.on('collect', async i => {
+			collector.resetTimer();
 			const buttonId = parseInt(i.customId);
-			if (isTrash[buttonId] && !uniquetrashID.includes(buttonId)) {
-				uniquetrashID.push(buttonId);
+			if (isTrash[buttonId] && !collectedTrashID.includes(buttonId)) {
+				collectedTrashID.push(buttonId);
+				await interaction.editReply({ content: 'click the pieces of trash!', components: [createActionRow({ isTrash, collectedTrashID })] });
 			}
 
-			if (uniquetrashID.length >= numTrash) {
+			await i.deferUpdate();
+
+			if (collectedTrashID.length >= numTrash) {
 				collector.stop('clickedAll');
-			}
-			else {
-				await i.deferUpdate();
 			}
 		});
 
@@ -54,31 +54,25 @@ async function cleaning(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedAll') {
-				await interaction.editReply({ content: 'you earned $100 from collecting all the trash!', components: [] });
+				await interaction.editReply({ content: '\u{1F5D1} you earned **$50** from collecting the trash!', components: [] });
 				resolve(true);
 			}
 		});
 	});
 }
 
-const createCleaningButtons = (isTrash) => {
+const createActionRow = ({ isTrash, collectedTrashID = [] }) => {
+	return new ActionRowBuilder().addComponents(createCleaningButtons(isTrash, collectedTrashID));
+};
+
+const createCleaningButtons = (isTrash, collectedTrashID) => {
 	const buttons = [];
 
 	for (let i = 0; i < isTrash.length; i++) {
-		if (isTrash[i] === true) {
-			const litterEmoji = litter[Math.floor(Math.random() * litter.length)];
-
-			buttons.push(new ButtonBuilder()
-				.setCustomId(`${i}`)
-				.setLabel(litterEmoji)
-				.setStyle(ButtonStyle.Secondary));
-		}
-		else {
-			buttons.push(new ButtonBuilder()
-				.setCustomId(`${i}`)
-				.setLabel('-')
-				.setStyle(ButtonStyle.Secondary));
-		}
+		buttons.push(new ButtonBuilder()
+			.setCustomId(`${i}`)
+			.setLabel(isTrash[i] && !collectedTrashID.includes(i) ? isTrash[i] : '-')
+			.setStyle(ButtonStyle.Secondary));
 	}
 	return buttons;
 };

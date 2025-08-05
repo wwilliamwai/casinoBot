@@ -20,8 +20,8 @@ async function mining(interaction) {
 		let timesClicked = 0;
 
 		collector.on('collect', async i => {
+			collector.resetTimer();
 			if (i.customId === 'mine') {
-				collector.resetTimer();
 				timesClicked++;
 
 				await i.deferUpdate();
@@ -40,7 +40,7 @@ async function mining(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedEnough') {
-				await interaction.editReply({ content: '🪨🪨🪨 you earned **$100** from mining!', components: [] });
+				await interaction.editReply({ content: '🪨🪨🪨 you earned **$50** from mining!', components: [] });
 				resolve(true);
 			}
 		});
