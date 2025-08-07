@@ -25,14 +25,14 @@ module.exports = {
 
 		activeGames.set(interactionUserID, null);
 		try {
-			const user = getUser(interactionUserID);
+			const user = await getUser(interactionUserID);
 
 			if (user) {
 				// to fix bug if the data changes mid game or like if 2 players at the same time.
 				// has the endAmount and the most updated blackjackstreak
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
 
-				updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
+				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
 				await interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });

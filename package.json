@@ -3,7 +3,8 @@
     "better-sqlite3": "^12.2.0",
     "cards.js": "^1.0.1",
     "discord.js": "^14.21.0",
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.1",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

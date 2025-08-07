@@ -9,7 +9,7 @@ module.exports = {
 		.setDescription('Check your current balance'),
 	async execute(interaction) {
 		try {
-			const user = getUser(interaction.user.id);
+			const user = await getUser(interaction.user.id);
 
 			if (user) {
 				interaction.reply(`${interaction.user} has $${user.balance} in their balance.`);

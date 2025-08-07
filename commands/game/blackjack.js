@@ -37,13 +37,13 @@ module.exports = {
 		}
 		// if they did bet, then play a blackjack game with money on the line
 		try {
-			const user = getUser(interactionUserID);
+			const user = await getUser(interactionUserID);
 
 			// if the user's data does exist
 			if (user) {
 				const gameEndData = await playBettingGame(betAmount, user, interaction);
 
-				updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
+				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
 				await interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });

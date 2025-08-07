@@ -12,7 +12,7 @@ module.exports = {
 	async execute(interaction) {
 		try {
 			const interactionUserID = interaction.user.id;
-			const user = getUser(interactionUserID);
+			const user = await getUser(interactionUserID);
 
 			// play the game
 			let jobComplete = false;
@@ -24,12 +24,12 @@ module.exports = {
 			}
 
 			if (user && jobComplete) {
-				updateBalance(interactionUserID, 50);
+				await updateBalance(interactionUserID, 50);
 			}
 			// if the user data doesn't yet exist
 			else if (jobComplete) {
 				const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-				createUser(interactionUserID, name, 50);
+				await createUser(interactionUserID, name, 50);
 			}
 		}
 		catch (error) {

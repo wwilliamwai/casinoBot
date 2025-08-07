@@ -31,7 +31,7 @@ module.exports = {
 
 		try {
 
-			const sender = getUser(senderID);
+			const sender = await getUser(senderID);
 
 			// if the sender exists in the file
 			if (sender) {
@@ -46,15 +46,15 @@ module.exports = {
 					return;
 				}
 				else {
-					const receiver = getUser(receiverID);
+					const receiver = await getUser(receiverID);
 
 					// if the receiver data doesn't yet exist
 					if (!receiver) {
 						const name = receivingUser.globalName ? receivingUser.globalName : receivingUser.username;
-						createUser(receiverID, name, 0);
+						await createUser(receiverID, name, 0);
 					}
-					updateBalance(senderID, -money);
-					updateBalance(receiverID, money);
+					await updateBalance(senderID, -money);
+					await updateBalance(receiverID, money);
 
 					await interaction.reply(`${interaction.user} gave $${money} to ${receivingUser}!`);
 				}
