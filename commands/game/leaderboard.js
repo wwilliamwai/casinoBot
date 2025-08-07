@@ -9,7 +9,8 @@ module.exports = {
 		.setDescription('Check the leaderboard for most money!'),
 	async execute(interaction) {
 		try {
-			const sortedData = await getAllUsers().toSorted((a, b) => b.balance - a.balance);
+			const users = await getAllUsers();
+			const sortedData = users.sort((a, b) => b.balance - a.balance);
 
 			const leaderboardEmbed = createEmbedElement(sortedData);
 			await interaction.reply({ content: '', embeds: [leaderboardEmbed] });
