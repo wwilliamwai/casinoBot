@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const userDataPath = path.join(__dirname, '../../userData.json');
+const { getUser, createUser, updateBalance } = require('../../database/db.js');
 
 const { mining } = require('../../game/playMiningGame');
 const { cleaning } = require('../../game/playCleaningGame');
@@ -14,11 +11,8 @@ module.exports = {
 		.setDescription('do work to make more money.'),
 	async execute(interaction) {
 		try {
-			const data = await fs.promises.readFile(userDataPath, 'utf8');
-			const userData = JSON.parse(data);
-
 			const interactionUserID = interaction.user.id;
-			const user = userData.users.find((targetUser) => targetUser.userID === interactionUserID);
+			const user = getUser(interactionUserID);
 
 			// play the game
 			let jobComplete = false;
@@ -30,26 +24,12 @@ module.exports = {
 			}
 
 			if (user && jobComplete) {
-				user.balance += 50;
-				await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
+				updateBalance(interactionUserID, 50);
 			}
+			// if the user data doesn't yet exist
 			else if (jobComplete) {
 				const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-
-				// converting today's date into yesterday's date.
-				const now = new Date();
-				now.setDate(now.getDate() - 1);
-				// 'YYYY-MM-DD'
-				const yesterday = now.toLocaleDateString('en-CA');
-
-				userData.users.push({
-					userID: interactionUserID,
-					name: name,
-					balance: 50,
-					blackJackStreak: 0,
-					lastWageDate: yesterday,
-				});
-				await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
+				createUser(interactionUserID, name, 50);
 			}
 		}
 		catch (error) {

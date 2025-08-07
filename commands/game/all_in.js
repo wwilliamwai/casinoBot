@@ -1,11 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 
 const { activeGames } = require('../../game/blackJackState');
 const { playBlackJackGame } = require('../../game/playBlackJackGame');
-
-const userDataPath = path.join(__dirname, '../../userData.json');
+const { getUser, updateAfterBlackJack } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
@@ -28,26 +25,17 @@ module.exports = {
 
 		activeGames.set(interactionUserID, null);
 		try {
-			const data = await fs.promises.readFile(userDataPath, 'utf8');
-			const userData = JSON.parse(data);
-
-			const user = userData.users.find((targetUser) => targetUser.userID === interactionUserID);
+			const user = getUser(interactionUserID);
 
 			if (user) {
 				// to fix bug if the data changes mid game or like if 2 players at the same time.
 				// has the endAmount and the most updated blackjackstreak
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
 
-				const mostRecentData = await fs.promises.readFile(userDataPath, 'utf8');
-				const mostRecentUserData = JSON.parse(mostRecentData);
-
-				const updatedUser = mostRecentUserData.users.find((targetUser) => targetUser.userID === interactionUserID);
-				updatedUser.balance += gameEndData[0];
-				updatedUser.blackJackStreak = gameEndData[1];
-				await fs.promises.writeFile(userDataPath, JSON.stringify(mostRecentUserData, null, 2));
+				updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
-				await interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

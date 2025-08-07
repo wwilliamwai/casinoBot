@@ -24,7 +24,7 @@ async function cleaning(interaction) {
 	const collector = response.resource.message.createMessageComponentCollector({
 		filter: filter,
 		componentType: ComponentType.Button,
-		time: 45_000 });
+		time: 30_000 });
 
 	const numTrash = isTrash.filter(Boolean).length;
 	const collectedTrashID = [];

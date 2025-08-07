@@ -1,26 +1,21 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 
-const userDataPath = path.join(__dirname, '../../userData.json');
+const { getUser } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('balance')
-		.setDescription('Check your current balance.'),
+		.setDescription('Check your current balance'),
 	async execute(interaction) {
 		try {
-			const data = await fs.promises.readFile(userDataPath, 'utf8');
-			const userData = JSON.parse(data);
-
-			const user = userData.users.find((targetUser) => targetUser.userID === interaction.user.id);
+			const user = getUser(interaction.user.id);
 
 			if (user) {
 				interaction.reply(`${interaction.user} has $${user.balance} in their balance.`);
 			}
 			else {
-				interaction.reply({ content: `${interaction.user}. You haven't collected a wage yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const userDataPath = path.join(__dirname, '../../userData.json');
+const { getAllUsers } = require('../../database/db.js');
 
 module.exports = {
 	cooldown: 5,
@@ -12,10 +9,7 @@ module.exports = {
 		.setDescription('Check the leaderboard for most money!'),
 	async execute(interaction) {
 		try {
-			const data = await fs.promises.readFile(userDataPath, 'utf8');
-			const userData = JSON.parse(data);
-
-			sortedData = userData.users.toSorted((a, b) => b.balance - a.balance);
+			const sortedData = getAllUsers().toSorted((a, b) => b.balance - a.balance);
 
 			const leaderboardEmbed = createEmbedElement(sortedData);
 			await interaction.reply({ content: '', embeds: [leaderboardEmbed] });

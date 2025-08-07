@@ -1,8 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const userDataPath = path.join(__dirname, '../../userData.json');
+const { getUser, createUser, updateBalance } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
@@ -21,9 +18,11 @@ module.exports = {
 		),
 	async execute(interaction) {
 		const receivingUser = interaction.options.getUser('receiver');
+		const receiverID = receivingUser.id;
+		const senderID = interaction.user.id;
 
 		// if you try sending it to the casinoBot itself
-		if (receivingUser.id === '1396921157936091156') {
+		if (receiverID === '1396921157936091156') {
 			await interaction.reply({ content: 'Sorry I can\'t hold any money donate to someone else :3', flags: MessageFlags.Ephemeral });
 			return;
 		}
@@ -31,10 +30,8 @@ module.exports = {
 		const money = interaction.options.getNumber('money');
 
 		try {
-			const data = await fs.promises.readFile(userDataPath, 'utf8');
-			const userData = JSON.parse(data);
 
-			const sender = userData.users.find((targetUser) => targetUser.userID === interaction.user.id);
+			const sender = getUser(senderID);
 
 			// if the sender exists in the file
 			if (sender) {
@@ -48,40 +45,27 @@ module.exports = {
 					await interaction.reply({ content: 'That is not a valid amount of money!', flags: MessageFlags.Ephemeral });
 					return;
 				}
-				// otherwise if they don't alreayd exist
 				else {
-					let receiver = userData.users.find((targetUser) => targetUser.userID === receivingUser.id);
-					const name = receivingUser.globalName ? receivingUser.globalName : receivingUser.username;
+					const receiver = getUser(receiverID);
 
+					// if the receiver data doesn't yet exist
 					if (!receiver) {
-						const now = Date.now();
-						now.setDate(now.getDate() - 1);
-						// 'YYYY-MM-DD'
-						const yesterday = now.toLocaleString('en-CA');
-
-						receiver = {
-							userID: receivingUser.id,
-							name: name,
-							balance: 0,
-							blackJackStreak: 0,
-							lastWageDate: yesterday,
-						};
-						userData.users.push(receiver);
+						const name = receivingUser.globalName ? receivingUser.globalName : receivingUser.username;
+						createUser(receiverID, name, 0);
 					}
-					sender.balance -= money;
-					receiver.balance += money;
+					updateBalance(senderID, -money);
+					updateBalance(receiverID, money);
 
-					await fs.promises.writeFile(userDataPath, JSON.stringify(userData, null, 2));
 					await interaction.reply(`${interaction.user} gave $${money} to ${receivingUser}!`);
 				}
 			}
 			else {
-				await interaction.reply({ content: 'wait you never earned any money. do /daily to get some!', flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {
 			console.error('Error processing the give command', error);
-			await interaction.reply({ content: 'Something went wrong while processing the give command!', flags: MessageFlags.Ephemeral });
+			await interaction.reply({ content: 'Something went wrong while processing the give command', flags: MessageFlags.Ephemeral });
 		}
 	},
 };

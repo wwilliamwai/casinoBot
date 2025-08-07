@@ -45,8 +45,10 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 				await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
 				return;
 			}
+
+			collector.resetTimer();
+
 			if (i.customId === 'hit') {
-				collector.resetTimer();
 				playerHand.push(deck.takeTopCard());
 				await updateEmbed({ playerHand, dealerHand, row, userWinStreak, interaction, isDealerTurn: false });
 				playerSum = sumOfHand(playerHand);
@@ -58,19 +60,16 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 				else if (playerSum === 21) {
 					collector.stop('got21');
 				}
-				else {
-					await i.deferUpdate();
-				}
 			}
 			if (i.customId === 'stand') {
-				collector.resetTimer();
-
 				while (dealerSum < 17) {
 					dealerHand.push(deck.takeTopCard());
 					dealerSum = sumOfHand(dealerHand);
 				};
 				collector.stop('dealer-end');
 			}
+
+			await i.deferUpdate();
 		});
 		collector.on('end', async (collected, reason) => {
 			if (reason === 'messageDelete') {
