@@ -1,7 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
-const db = require('./database/db');
 require('dotenv').config();
 const token = process.env.token;
 
@@ -18,9 +17,6 @@ const client = new Client({
 		Partials.Reaction,
 	],
 });
-
-// create the database table if it doesn't exist already
-await db.createTable;
 
 client.commands = new Collection();
 client.cooldowns = new Collection();
