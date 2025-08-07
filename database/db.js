@@ -12,11 +12,11 @@ const pool = new Pool({
 async function createTable() {
 	const query = `
     CREATE TABLE IF NOT EXISTS users (
-      userID TEXT PRIMARY KEY,
+      "userID" TEXT PRIMARY KEY,
       name TEXT,
       balance INTEGER,
-      blackJackStreak INTEGER,
-      lastWageDate TEXT
+      "blackJackStreak" INTEGER,
+      "lastWageDate" TEXT
     );
   `;
 	await pool.query(query);
@@ -24,16 +24,16 @@ async function createTable() {
 
 // Get one user by userID
 async function getUser(userID) {
-	const res = await pool.query('SELECT * FROM users WHERE userID = $1', [userID]);
+	const res = await pool.query('SELECT * FROM users WHERE "userID" = $1', [userID]);
 	return res.rows[0];
 }
 
 // Create a new user if not exists
 async function createUser(userID, name, amount) {
 	const query = `
-    INSERT INTO users (userID, name, balance, blackJackStreak, lastWageDate)
+    INSERT INTO users ("userID", name, balance, "blackJackStreak", "lastWageDate")
     VALUES ($1, $2, $3, 0, NULL)
-    ON CONFLICT (userID) DO NOTHING;
+    ON CONFLICT ("userID") DO NOTHING;
   `;
 	await pool.query(query, [userID, name, amount]);
 }
@@ -41,7 +41,7 @@ async function createUser(userID, name, amount) {
 // Update balance by adding amount
 async function updateBalance(userID, amount) {
 	const query = `
-    UPDATE users SET balance = balance + $1 WHERE userID = $2;
+    UPDATE users SET balance = balance + $1 WHERE "userID" = $2;
   `;
 	await pool.query(query, [amount, userID]);
 }
@@ -49,7 +49,7 @@ async function updateBalance(userID, amount) {
 // Update balance and blackJackStreak
 async function updateAfterBlackJack(userID, amount, blackJackStreak) {
 	const query = `
-    UPDATE users SET balance = balance + $1, blackJackStreak = $2 WHERE userID = $3;
+    UPDATE users SET balance = balance + $1, "blackJackStreak" = $2 WHERE "userID" = $3;
   `;
 	await pool.query(query, [amount, blackJackStreak, userID]);
 }
@@ -57,7 +57,7 @@ async function updateAfterBlackJack(userID, amount, blackJackStreak) {
 // Update lastWageDate
 async function updateLastWageDate(userID, lastWageDate) {
 	const query = `
-    UPDATE users SET lastWageDate = $1 WHERE userID = $2;
+    UPDATE users SET "lastWageDate" = $1 WHERE "userID" = $2;
   `;
 	await pool.query(query, [lastWageDate, userID]);
 }
