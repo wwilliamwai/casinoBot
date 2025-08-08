@@ -165,7 +165,7 @@ const createEmbedElement = ({ playerHand, dealerHand, userWinStreak, interaction
 		: `${faceCardsToNum(dealerHand[0][1])}+`;
 	const dealerCards = isDealerTurn
 		? handToString(dealerHand)
-		: handToString(dealerHand.slice(0, 1)) + ' `  `';
+		: handToString(dealerHand.slice(0, 1)) + ' `??`';
 
 	return new EmbedBuilder()
 		.setColor(0x25633d)
