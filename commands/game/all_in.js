@@ -58,7 +58,7 @@ const playBettingGame = async (betAmount, user, interaction) => {
 		await interaction.reply({ content: 'Not a valid amount to bet.', flags: MessageFlags.Ephemeral });
 	}
 	else {
-		const endAmount = await playBlackJackGame({ betAmount, betWinStreak: user.blackJackStreak, interaction });
+		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackJackStreak, interaction });
 		if (endAmount > 0) {
 			return [endAmount, ++user.blackJackStreak];
 		}
