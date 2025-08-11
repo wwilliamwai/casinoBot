@@ -9,6 +9,6 @@ module.exports = {
 		.setDescription('bans you from gambling for an hour'),
 	async execute(interaction) {
 		rehabilitatedUsers.set(interaction.user.id, Date.now());
-		await interaction.reply(`${interaction.user.id} you will now be rehabilitated for the next hour. addiction is not good...`);
+		await interaction.reply(`${interaction.user} you will now be rehabilitated for the next hour. addiction is not good...`);
 	},
 };
