@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
-const { activeGames } = require('../../game/blackJackState');
+const { activeGames, rehabilitatedUsers } = require('../../game/blackJackState');
 const { playBlackJackGame } = require('../../game/playBlackJackGame');
 const { getUser, updateAfterBlackJack } = require('../../database/db.js');
 
