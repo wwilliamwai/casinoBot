@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
-const { activeGames } = require('../../game/blackJackState');
+const { activeGames, rehabilitatedUsers } = require('../../game/blackJackState');
 const { playBlackJackGame } = require('../../game/playBlackJackGame');
 const { getUser, updateAfterBlackJack } = require('../../database/db.js');
 
@@ -15,6 +15,17 @@ module.exports = {
 		),
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
+
+		if (rehabilitatedUsers.has(interactionUserID)) {
+			if (Date.now() - 3600000 >= rehabilitatedUsers.get(interactionUserID)) {
+				rehabilitatedUsers.delete(interactionUserID);
+			}
+			else {
+				await interaction.reply('you cannot play right now. you are in the rehabilitation process');
+				return;
+			}
+		}
+
 		if (activeGames.has(interactionUserID)) {
 			try {
 				const existingGame = activeGames.get(interactionUserID).resource.message;
@@ -60,6 +71,7 @@ module.exports = {
 };
 
 // helper functions
+
 
 const playBettingGame = async (betAmount, user, interaction) => {
 	if (user.balance < betAmount) {

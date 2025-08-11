@@ -11,6 +11,17 @@ module.exports = {
 		.setDescription('Bet all of your money on a game of blackjack!'),
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
+
+		if (rehabilitatedUsers.has(interactionUserID)) {
+			if (Date.now() - 3600000 >= rehabilitatedUsers.get(interactionUserID)) {
+				rehabilitatedUsers.delete(interactionUserID);
+			}
+			else {
+				await interaction.reply('you cannot play right now. you are in the rehabilitation process');
+				return;
+			}
+		}
+
 		if (activeGames.has(interactionUserID)) {
 			try {
 				const existingGame = activeGames.get(interactionUserID).resource.message;
