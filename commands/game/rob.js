@@ -8,7 +8,7 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('rob')
-		.setDescription('Chance to rob 10% from the user you select!')
+		.setDescription('Chance to rob 25% from the user you select!')
 		.addUserOption(option =>
 			option.setName('target')
 				.setDescription('Your robbing target')
@@ -118,7 +118,7 @@ const resetCooldown = (robberID, interaction) => {
 };
 
 const rob = async (targetID, robberID, targetBalance, interaction) => {
-	let moneyRobbed = Math.floor(targetBalance * 0.10);
+	let moneyRobbed = Math.floor(targetBalance * 0.25);
 
 	// the target has to have at least 1 dollar, so just rob that dollar
 	if (moneyRobbed < 1) {
