@@ -23,13 +23,16 @@ module.exports = {
 				jobComplete = await cleaning(interaction);
 			}
 
+			let laborAmount = 50;
+
 			if (user && jobComplete) {
-				await updateBalance(interactionUserID, 50);
+				laborAmount = getLaborAmount(user.balance);
+				await updateBalance(interactionUserID, laborAmount);
 			}
 			// if the user data doesn't yet exist
 			else if (jobComplete) {
 				const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-				await createUser(interactionUserID, name, 50);
+				await createUser(interactionUserID, name, laborAmount);
 			}
 		}
 		catch (error) {
@@ -38,3 +41,12 @@ module.exports = {
 		}
 	},
 };
+
+function getLaborAmount(num) {
+	if (num < 10000) {
+		return 50;
+	}
+	const digits = Math.floor(Math.log10(num)) + 1;
+	const newDigits = digits - 2;
+	return 5 * Math.pow(10, newDigits - 1);
+}

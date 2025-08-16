@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { rehabilitatedUsers } = require('../../game/blackJackState');
 
 module.exports = {
@@ -6,9 +6,18 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('rehabilitation')
-		.setDescription('bans you from gambling for an hour'),
+		.setDescription('Bans you from gambling until the next day!'),
 	async execute(interaction) {
-		rehabilitatedUsers.set(interaction.user.id, Date.now());
-		await interaction.reply(`${interaction.user} you will now be rehabilitated for the next hour. addiction is not good...`);
+		// YYYY-MM-DD
+		const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+		if (rehabilitatedUsers.has(interaction.user.id)) {
+
+			if (date === today) {
+				await interaction.reply({ content: 'you\'ve already rehabilitated yourself. please wait for the next day', flags: MessageFlags.Ephemeral });
+				return;
+			}
+		}
+		rehabilitatedUsers.set(interaction.user.id, today);
+		await interaction.reply(`${interaction.user} you will now be rehabilitated until the next day. addiction is not good...`);
 	},
 };

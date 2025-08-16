@@ -37,12 +37,12 @@ module.exports = {
 			if (sender) {
 				// if they are trying to send too much
 				if (sender.balance < money) {
-					await interaction.reply({ content: 'You do not have enough money!', flags: MessageFlags.Ephemeral });
+					await interaction.reply({ content: 'you do not have enough money!', flags: MessageFlags.Ephemeral });
 					return;
 				}
 				// if they are trying to send an invalid amount
 				else if (money <= 0) {
-					await interaction.reply({ content: 'That is not a valid amount of money!', flags: MessageFlags.Ephemeral });
+					await interaction.reply({ content: 'that is not a valid amount of money!', flags: MessageFlags.Ephemeral });
 					return;
 				}
 				else {
@@ -60,7 +60,7 @@ module.exports = {
 				}
 			}
 			else {
-				await interaction.reply({ content: `${interaction.user}. You haven't collected any money yet. Do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
+				await interaction.reply({ content: `${interaction.user}. you haven't collected any money yet. do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {

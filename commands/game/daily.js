@@ -14,19 +14,21 @@ module.exports = {
 			// 'YYYY-MM-DD'
 			const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
 
+			let dailyWage = 1000;
 			if (user) {
-				if (user.lastWageDate === today) {
+				if (user.lastwagedate === today) {
 					await interaction.reply({ content: 'you\'ve already collected your daily today. do it after 12 am now.', flags: MessageFlags.Ephemeral });
 				}
 				else {
-					await updateBalance(interactionUserID, 1000);
+					dailyWage = getDailyAmount(user.balance);
+					await updateBalance(interactionUserID, dailyWage);
 					await updateLastWageDate(interactionUserID, today);
-					await interaction.reply(`${interaction.user} has earned their **$1000 daily.** nice job bro.`);
+					await interaction.reply(`${interaction.user} has earned their **$${dailyWage} daily.** nice job bro.`);
 				}
 			}
 			else {
 				const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-				await createUser(interactionUserID, name, 1000);
+				await createUser(interactionUserID, name, dailyWage);
 				await interaction.reply(`${interaction.user} has earned their **$1000 daily.** nice job bro.`);
 			}
 		}
@@ -36,3 +38,11 @@ module.exports = {
 		}
 	},
 };
+
+function getDailyAmount(num) {
+	if (user.balance < 10000) {
+		return 1000;
+	}
+	const digits = Math.floor(Math.log10(num)) + 1;
+	return Math.pow(10, digits - 1);
+}
