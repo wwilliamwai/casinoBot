@@ -1,6 +1,8 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+types.setTypeParser(20, val => parseInt(val, 10));
+
 const pool = new Pool({
 	connectionString: process.env.DATABASE_URL,
 	ssl: {
