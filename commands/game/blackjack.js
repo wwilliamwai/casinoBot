@@ -16,7 +16,7 @@ module.exports = {
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
 
-		if (checkForActiveGames(interactionUserID, interaction)) {
+		if (await checkForActiveGames(interactionUserID, interaction)) {
 			return;
 		}
 
@@ -30,7 +30,6 @@ module.exports = {
 		}
 		// if they did bet, then play a blackjack game with money on the line
 		try {
-			// do any gambling checks if they are arrested or rehabilitated
 			if (await checkIfRehabilitated(interactionUserID, interaction)) {
 				return;
 			}
@@ -44,6 +43,7 @@ module.exports = {
 			// if the user's data does exist
 			if (user) {
 				activeGames.set(interactionUserID, null);
+
 				const gameEndData = await playBettingGame(betAmount, user, interaction);
 
 				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
@@ -73,12 +73,12 @@ const playBettingGame = async (betAmount, user, interaction) => {
 		await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
 	}
 	else {
-		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackjackstreak, interaction });
+		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackJackStreak, interaction });
 		if (endAmount > 0) {
-			return [endAmount, ++user.blackjackstreak];
+			return [endAmount, ++user.blackJackStreak];
 		}
 		else if (endAmount === 0) {
-			return [endAmount, user.blackjackstreak];
+			return [endAmount, user.blackJackStreak];
 		}
 		else {
 			return [endAmount, 0];
@@ -94,7 +94,7 @@ const checkIfRehabilitated = async (interactionUserID, interaction) => {
 			rehabilitatedUsers.delete(interactionUserID);
 			return false;
 		}
-		await interaction.reply('you are in rehabilitation. please wait for the next day (12 am) to continue gambling.');
+		await interaction.reply('you are in rehabilitation. please wait for the next day (12 am) to continue playing.');
 		return true;
 	}
 	return false;
@@ -121,7 +121,7 @@ const checkForActiveGames = async (interactionUserID, interaction) => {
 		catch (error) {
 			console.error('an error occured when reaching the existing game', error);
 		}
-		interaction.reply({ content: '...', flags: MessageFlags.Ephemeral });
+		await interaction.reply({ content: '...', flags: MessageFlags.Ephemeral });
 		return true;
 	}
 	return false;
