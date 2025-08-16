@@ -75,10 +75,10 @@ const playBettingGame = async (betAmount, user, interaction) => {
 	else {
 		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackJackStreak, interaction });
 		if (endAmount > 0) {
-			return [endAmount, ++user.blackJackStreak];
+			return [endAmount, ++user.blackjackstreak];
 		}
 		else if (endAmount === 0) {
-			return [endAmount, user.blackJackStreak];
+			return [endAmount, user.blackjackstreak];
 		}
 		else {
 			return [endAmount, 0];
