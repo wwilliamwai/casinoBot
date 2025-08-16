@@ -30,8 +30,8 @@ module.exports = {
 		}
 
 		try {
-			let robber = getUser(robberID);
-			const target = getUser(targetID);
+			let robber = await getUser(robberID);
+			const target = await getUser(targetID);
 
 			// check if the robber or target data even exists
 			if (!target) {
@@ -40,7 +40,7 @@ module.exports = {
 			}
 			if (!robber) {
 				const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-				robber = createUser(robberID, name, 0);
+				robber = await createUser(robberID, name, 0);
 			}
 
 			const robberBalance = robber.balance;
@@ -119,11 +119,11 @@ const rob = async (targetID, robberID, targetBalance, interaction) => {
 		moneyRobbed = 1;
 	}
 
-	updateBalance(robberID, moneyRobbed);
-	updateBalance(targetID, -moneyRobbed);
+	await updateBalance(robberID, moneyRobbed);
+	await updateBalance(targetID, -moneyRobbed);
 
 	// reset the fail streak to 0
-	updateRobberyFailStreak(robberID, 0);
+	await updateRobberyFailStreak(robberID, 0);
 
 	await interaction.editReply({ content: `congratulations <@${robberID}>! you managed to rob <@${targetID}> to earn **$${moneyRobbed}!**`, embeds: [], components: [] });
 };
@@ -132,8 +132,8 @@ const failedRob = async (robberID, robber, robChance, interaction) => {
 	arrestedUsers.set(robberID, Date.now());
 	const moneyLost = Math.floor(robber.balance * 0.05);
 
-	updateBalance(robberID, -moneyLost);
-	updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
+	await updateBalance(robberID, -moneyLost);
+	await updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
 	await interaction.editReply({ content: `<@${robberID}> with a probability of **${setChanceToPercent(robChance)}%**, you failed to rob your target! you now face a **15 minute** punishment. **no gambling!**`, embeds: [], components: [] });
 };
 
