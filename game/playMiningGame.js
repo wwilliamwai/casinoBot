@@ -1,6 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
-async function mining(interaction) {
+async function mining(interaction, moneyEarned) {
 	const row = new ActionRowBuilder().addComponents(
 		new ButtonBuilder()
 			.setCustomId('mine')
@@ -40,7 +40,7 @@ async function mining(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedEnough') {
-				await interaction.editReply({ content: '🪨🪨🪨 you earned **$50** from mining!', components: [] });
+				await interaction.editReply({ content: `🪨🪨🪨 you earned **$${moneyEarned}** from mining!`, components: [] });
 				resolve(true);
 			}
 		});

@@ -14,19 +14,18 @@ module.exports = {
 			const interactionUserID = interaction.user.id;
 			const user = await getUser(interactionUserID);
 
+			const laborAmount = getLaborAmount(user.balance);
 			// play the game
 			let jobComplete = false;
 			if (Math.random() < 0.5) {
-				jobComplete = await mining(interaction);
+				jobComplete = await mining(interaction, laborAmount);
 			}
 			else {
-				jobComplete = await cleaning(interaction);
+				jobComplete = await cleaning(interaction, laborAmount);
 			}
 
-			let laborAmount = 50;
 
 			if (user && jobComplete) {
-				laborAmount = getLaborAmount(user.balance);
 				await updateBalance(interactionUserID, laborAmount);
 			}
 			// if the user data doesn't yet exist

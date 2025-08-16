@@ -2,7 +2,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require(
 
 const litter = ['\u{1F9FB}', '\u{1F964}', '\u{1F37E}', '\u{1F36B}', '\u{1F9C3}'];
 
-async function cleaning(interaction) {
+async function cleaning(interaction, moneyEarned) {
 	const isTrash = ['', '', '', '', ''];
 
 	for (let i = 0; i < isTrash.length; i++) {
@@ -54,7 +54,7 @@ async function cleaning(interaction) {
 				resolve(false);
 			}
 			if (reason === 'clickedAll') {
-				await interaction.editReply({ content: '\u{1F5D1} you earned **$50** from collecting the trash!', components: [] });
+				await interaction.editReply({ content: `\u{1F5D1} you earned **$${moneyEarned}** from collecting the trash!`, components: [] });
 				resolve(true);
 			}
 		});
