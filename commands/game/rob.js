@@ -147,7 +147,7 @@ const createEmbedElement = (robberFailStreak, robChance, targetID, targetUser, i
 		.setTitle('Robbery')
 		.setTimestamp(Date.now())
 		.setDescription(
-			`Probability of Success: **${setChanceToPercent(robChance)}%**\nRobbery Fail Streak: ${robberFailStreak}\n\nDo you wish to continue with the robbery on **${targetUser.globalName}**?`,
+			`Probability of Success: **${setChanceToPercent(robChance)}%**\nRobbery Fail Streak: ${robberFailStreak}\n\nDo you wish to continue the robbery on **${targetUser.globalName}**?`,
 		);
 };
 
