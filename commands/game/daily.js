@@ -20,7 +20,7 @@ module.exports = {
 					await interaction.reply({ content: 'you\'ve already collected your daily today. do it after 12 am now.', flags: MessageFlags.Ephemeral });
 				}
 				else {
-					dailyWage = getDailyAmount(user.balance);
+					dailyWage = getDailyAmount(user.balance, user);
 					await updateBalance(interactionUserID, dailyWage);
 					await updateLastWageDate(interactionUserID, today);
 					await interaction.reply(`${interaction.user} has earned their **$${dailyWage} daily.** nice job bro.`);
@@ -40,7 +40,7 @@ module.exports = {
 };
 
 function getDailyAmount(num) {
-	if (user.balance < 10000) {
+	if (num < 10000) {
 		return 1000;
 	}
 	const digits = Math.floor(Math.log10(num)) + 1;
