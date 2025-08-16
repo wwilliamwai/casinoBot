@@ -12,7 +12,7 @@ const pool = new Pool({
 async function createTable() {
 	const query = `
     CREATE TABLE IF NOT EXISTS users (
-      "userid" TEXT PRIMARY KEY,
+      userid TEXT PRIMARY KEY,
       name TEXT,
       balance INTEGER,
       blackjackstreak INTEGER,

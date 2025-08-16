@@ -79,21 +79,22 @@ module.exports = {
 				}
 
 				collector.resetTimer();
-				i.deferUpdate();
 
 				if (i.customId === 'rob') {
-					collector.stop('rob');
 					if (Math.random() <= robChance) {
 						await rob(targetID, robberID, targetBalance, interaction);
 					}
 					else {
 						await failedRob(robberID, robber, robChance, interaction);
 					}
+					collector.stop('rob');
 				}
 				else if (i.customId === 'abort') {
 					await interaction.editReply({ content: 'crime aborted. cooldown reset!', embeds: [], components: [] });
 					resetCooldown(robberID, i);
+					collector.stop('abort');
 				}
+				i.deferUpdate();
 			});
 		}
 		catch (error) {
