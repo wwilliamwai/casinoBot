@@ -22,10 +22,12 @@ module.exports = {
 		// don't rob the casinoBot bro that's weird
 		if (targetID === '1396921157936091156') {
 			await interaction.reply({ content: 'Sorry you can\'t rob me that is weird', flags: MessageFlags.Ephemeral });
+			resetCooldown(robberID, interaction);
 			return;
 		}
 		if (targetID === robberID) {
 			await interaction.reply({ content: 'wait you can\'t rob yourself? what are you doing!?', flags: MessageFlags.Ephemeral });
+			resetCooldown(robberID, interaction);
 			return;
 		}
 
@@ -36,6 +38,7 @@ module.exports = {
 			// check if the robber or target data even exists
 			if (!target) {
 				await interaction.reply({ content: 'that target hasn\'t earned any money yet!', flags: MessageFlags.Ephemeral });
+				resetCooldown(robberID, interaction);
 				return;
 			}
 			if (!robber) {
@@ -52,11 +55,13 @@ module.exports = {
 			// you cant rob someone with no money
 			if (targetBalance <= 0) {
 				await interaction.reply({ content: 'the target is poor and why are you trying to rob air!?', flags: MessageFlags.Ephemeral });
+				resetCooldown(robberID, interaction);
 				return;
 			}
 			// the maximum target has to at least form a ratio of 0.01
 			if (ratio < 0.01) {
 				await interaction.reply({ content: `out of range. please choose a target under **$${Math.floor(robberBalance / 0.01)}**`, flags: MessageFlags.Ephemeral });
+				resetCooldown(robberID, interaction);
 				return;
 			}
 
