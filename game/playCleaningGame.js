@@ -46,16 +46,18 @@ async function cleaning(interaction, moneyEarned) {
 		});
 
 		collector.on('end', async (collected, reason) => {
-			if (reason === 'messageDelete') {
+			switch (reason) {
+			case 'messageDelete':
 				resolve(false);
-			}
-			if (reason === 'time') {
+				break;
+			case 'time':
 				await interaction.editReply({ content: 'sorry you took too long to clean up', components: [] });
 				resolve(false);
-			}
-			if (reason === 'clickedAll') {
+				break;
+			case 'clickedAll':
 				await interaction.editReply({ content: `\u{1F5D1} you earned **$${moneyEarned}** from collecting the trash!`, components: [] });
 				resolve(true);
+				break;
 			}
 		});
 	});

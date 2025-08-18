@@ -72,24 +72,25 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 			await i.deferUpdate();
 		});
 		collector.on('end', async (collected, reason) => {
-			if (reason === 'messageDelete') {
+			switch (reason) {
+			case 'messageDelete':
 				activeGames.delete(interaction.user.id);
 				if (betAmount != 0) {
 					interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
 				}
 				resolve(-betAmount);
-			}
-			if (reason === 'time') {
+				break;
+			case 'time':
 				await updateEmbed({ content: 'yo you took too long bro. it\'s been 5 whole minutes!', playerHand, dealerHand, row, userWinStreak: userWinStreak != null ? 0 : null, interaction });
 				activeGames.delete(interaction.user.id);
 				resolve(-betAmount);
-			}
-			if (reason === 'bust') {
+				break;
+			case 'bust':
 				await updateEmbed({ content: 'busted! \u{274C}', playerHand, dealerHand, row, userWinStreak: userWinStreak != null ? 0 : null, interaction });
 				activeGames.delete(interaction.user.id);
 				resolve(-betAmount);
-			}
-			if (reason === 'got21') {
+				break;
+			case 'got21':
 				// then the house still has to roll to see if they can tie
 				while (dealerSum < 17) {
 					dealerHand.push(deck.takeTopCard());
@@ -97,14 +98,15 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 				};
 				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
-			}
-			if (reason === 'dealer-end') {
+				break;
+			case 'dealer-end':
 				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
+				break;
 			}
 		});
 	});
-};
+}
 
 // helper methods
 const displayGameResult = async (playerHand, dealerHand, row, userWinStreak, betAmount, interaction) => {

@@ -93,29 +93,31 @@ module.exports = {
 				else if (i.customId === 'abort') {
 					collector.stop('abort');
 				}
-				collector.resetTimer();
 				i.deferUpdate();
 			});
 
 			collector.on('end', async (collected, reason) => {
-				if (reason === 'messageDelete') {
+				switch (reason) {
+				case 'messageDelete':
 					interaction.channel.send('umm why did you guys delete the robbery attempt??');
-				}
-				if (reason === 'time') {
+					resetCooldown(robberID, interaction);
+					break;
+				case 'time':
 					interaction.editReply({ content: 'crime aborted. you guys took too long. cooldown reset!', embeds: [], components: [] });
 					resetCooldown(robberID, interaction);
-				}
-				if (reason === ' rob') {
+					break;
+				case 'rob':
 					if (Math.random() <= robChance) {
 						await rob(targetID, robberID, targetBalance, robChance, interaction);
 					}
 					else {
 						await failedRob(robberID, robber, robChance, interaction);
 					}
-				}
-				if (reason === 'abort') {
+					break;
+				case 'abort':
 					await interaction.editReply({ content: 'crime aborted. cooldown reset!', embeds: [], components: [] });
-					resetCooldown(robberID, i);
+					resetCooldown(robberID, interaction);
+					break;
 				}
 			});
 		}

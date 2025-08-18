@@ -24,7 +24,6 @@ module.exports = {
 				jobComplete = await cleaning(interaction, laborAmount);
 			}
 
-
 			if (user && jobComplete) {
 				await updateBalance(interactionUserID, laborAmount);
 			}
