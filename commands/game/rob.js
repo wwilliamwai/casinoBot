@@ -3,6 +3,10 @@ const { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, Butto
 const { arrestedUsers } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
+const maxRatio = 3;
+const moneyTuneCoeff = 0.8;
+const pityCoeff = 0.26;
+
 module.exports = {
 	cooldown: 3600,
 	category: 'game',
@@ -79,7 +83,7 @@ module.exports = {
 
 			collector.on('collect', async (i) => {
 				if (i.user.id != interaction.user.id) {
-					await i.reply({ content: 'not the right person??', flags: MessageFlags.Ephemeral });
+					await i.reply({ content: 'u are not the right person??', flags: MessageFlags.Ephemeral });
 					return;
 				}
 
@@ -87,7 +91,7 @@ module.exports = {
 
 				if (i.customId === 'rob') {
 					if (Math.random() <= robChance) {
-						await rob(targetID, robberID, targetBalance, interaction);
+						await rob(targetID, robberID, targetBalance, robChance, interaction);
 					}
 					else {
 						await failedRob(robberID, robber, robChance, interaction);
@@ -117,7 +121,7 @@ const resetCooldown = (robberID, interaction) => {
 	timestamps.delete(robberID);
 };
 
-const rob = async (targetID, robberID, targetBalance, interaction) => {
+const rob = async (targetID, robberID, targetBalance, robChance, interaction) => {
 	let moneyRobbed = Math.floor(targetBalance * 0.25);
 
 	// the target has to have at least 1 dollar, so just rob that dollar
@@ -130,8 +134,9 @@ const rob = async (targetID, robberID, targetBalance, interaction) => {
 
 	// reset the fail streak to 0
 	await updateRobberyFailStreak(robberID, 0);
+	resetCooldown(robberID, interaction);
 
-	await interaction.editReply({ content: `congratulations <@${robberID}>! you managed to rob <@${targetID}> to earn **$${moneyRobbed}!**`, embeds: [], components: [] });
+	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you managed to rob <@${targetID}> to earn **$${moneyRobbed}!**`, embeds: [], components: [] });
 };
 
 const failedRob = async (robberID, robber, robChance, interaction) => {
@@ -140,7 +145,7 @@ const failedRob = async (robberID, robber, robChance, interaction) => {
 
 	await updateBalance(robberID, -moneyLost);
 	await updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
-	await interaction.editReply({ content: `<@${robberID}> with a probability of **${setChanceToPercent(robChance)}%**, you failed to rob your target! you now face a **15 minute** punishment. **no gambling!**`, embeds: [], components: [] });
+	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now face a **15 minute** punishment. **no gambling!**`, embeds: [], components: [] });
 };
 
 const createEmbedElement = (robberFailStreak, robChance, targetID, targetUser, interaction) => {
@@ -175,9 +180,6 @@ const setChanceToPercent = (robChance) => {
 };
 
 const calculateRobChance = (targetBalance, robberBalance, robberFailStreak) => {
-	let chance = robberBalance / (targetBalance * Math.pow(0.80, robberFailStreak));
-	if (chance > 0.70) {
-		chance = 0.70;
-	}
-	return chance;
+	const A = Math.min(Math.log(robberBalance + 1) - Math.log(targetBalance + 1), Math.log(maxRatio));
+	return 1 / (1 + Math.pow(Math.E, -(moneyTuneCoeff * A + pityCoeff * robberFailStreak)));
 };
