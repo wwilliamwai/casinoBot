@@ -87,23 +87,36 @@ module.exports = {
 					return;
 				}
 
-				collector.resetTimer();
-
 				if (i.customId === 'rob') {
+					collector.stop('rob');
+				}
+				else if (i.customId === 'abort') {
+					collector.stop('abort');
+				}
+				collector.resetTimer();
+				i.deferUpdate();
+			});
+
+			collector.on('end', async (collected, reason) => {
+				if (reason === 'messageDelete') {
+					interaction.channel.send('umm why did you guys delete the robbery attempt??');
+				}
+				if (reason === 'time') {
+					interaction.editReply({ content: 'crime aborted. you guys took too long. cooldown reset!', embeds: [], components: [] });
+					resetCooldown(robberID, interaction);
+				}
+				if (reason === ' rob') {
 					if (Math.random() <= robChance) {
 						await rob(targetID, robberID, targetBalance, robChance, interaction);
 					}
 					else {
 						await failedRob(robberID, robber, robChance, interaction);
 					}
-					collector.stop('rob');
 				}
-				else if (i.customId === 'abort') {
+				if (reason === 'abort') {
 					await interaction.editReply({ content: 'crime aborted. cooldown reset!', embeds: [], components: [] });
 					resetCooldown(robberID, i);
-					collector.stop('abort');
 				}
-				i.deferUpdate();
 			});
 		}
 		catch (error) {
