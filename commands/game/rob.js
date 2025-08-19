@@ -4,8 +4,8 @@ const { activeGames, arrestedUsers } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
 const maxRatio = 3;
-const moneyTuneCoeff = 0.9;
-const pityCoeff = 0.18;
+const moneyTuneCoeff = 0.8;
+const pityCoeff = 0.2:
 
 module.exports = {
 	cooldown: 3600,
