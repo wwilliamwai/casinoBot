@@ -11,7 +11,7 @@ module.exports = {
 		// YYYY-MM-DD
 		const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
 		if (rehabilitatedUsers.has(interaction.user.id)) {
-
+			const date = rehabilitatedUsers.get(interaction.user.id);
 			if (date === today) {
 				await interaction.reply({ content: 'you\'ve already rehabilitated yourself. please wait for the next day', flags: MessageFlags.Ephemeral });
 				return;

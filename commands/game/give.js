@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getUser, createUser, updateBalance } = require('../../database/db.js');
+const { activeGames } = require('../../game/blackJackState');
 
 module.exports = {
 	category: 'game',
@@ -17,13 +18,18 @@ module.exports = {
 				.setRequired(true),
 		),
 	async execute(interaction) {
-		const receivingUser = interaction.options.getUser('receiver');
-		const receiverID = receivingUser.id;
 		const senderID = interaction.user.id;
 
+		if (await checkForActiveGames(senderID, interaction)) {
+			return;
+		}
+
+		const receivingUser = interaction.options.getUser('receiver');
+		const receiverID = receivingUser.id;
+
 		// if you try sending it to the casinoBot itself
-		if (receiverID === '1396921157936091156') {
-			await interaction.reply({ content: 'Sorry I can\'t hold any money donate to someone else :3', flags: MessageFlags.Ephemeral });
+		if (receivingUser.bot) {
+			await interaction.reply({ content: 'sorry I can\'t hold any money donate to someone else :3', flags: MessageFlags.Ephemeral });
 			return;
 		}
 
@@ -68,4 +74,18 @@ module.exports = {
 			await interaction.reply({ content: 'Something went wrong while processing the give command', flags: MessageFlags.Ephemeral });
 		}
 	},
+};
+
+const checkForActiveGames = async (interactionUserID, interaction) => {
+	if (activeGames.has(interactionUserID)) {
+		try {
+			const existingGame = activeGames.get(interactionUserID).resource.message;
+			await existingGame.reply({ content: `${interaction.user} you can\t send any money! you have a **game** going!` });
+		}
+		catch (error) {
+			console.error('an error occured when reaching the existing game', error);
+		}
+		return true;
+	}
+	return false;
 };

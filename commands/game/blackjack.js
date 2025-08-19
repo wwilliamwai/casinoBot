@@ -106,7 +106,7 @@ const checkIfArrested = async (interactionUserID, interaction) => {
 			arrestedUsers.delete(interactionUserID);
 			return false;
 		}
-		await interaction.reply('you\'ve faced a penalty for attempting to rob. please wait 15 minutes from your initial robbery.');
+		await interaction.reply('you\'ve faced a gambling penalty for attempting to rob. please wait 15 minutes from your initial robbery.');
 		return true;
 	}
 	return false;

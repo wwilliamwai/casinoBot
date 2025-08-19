@@ -4,8 +4,8 @@ const { arrestedUsers } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
 const maxRatio = 3;
-const moneyTuneCoeff = 0.8;
-const pityCoeff = 0.26;
+const moneyTuneCoeff = 0.9;
+const pityCoeff = 0.18;
 
 module.exports = {
 	cooldown: 3600,
@@ -19,17 +19,27 @@ module.exports = {
 				.setRequired(true),
 		),
 	async execute(interaction) {
+		const robberID = interaction.user.id;
+
+		if (await checkForActiveGames(robberID, interaction)) {
+			return;
+		}
+
 		const targetUser = interaction.options.getUser('target');
 		const targetID = targetUser.id;
-		const robberID = interaction.user.id;
 
 		// don't rob the casinoBot bro that's weird
 		if (targetID === '1396921157936091156') {
-			await interaction.reply({ content: 'Sorry you can\'t rob me that is weird', flags: MessageFlags.Ephemeral });
+			await interaction.reply({ content: 'why do you want to rob me!!!! that\'s so mean!! ;-;', flags: MessageFlags.Ephemeral });
 			resetCooldown(robberID, interaction);
 			return;
 		}
-		if (targetID === robberID) {
+		else if (targetUser.bot) {
+			await interaction.reply({ content: 'you can\'t rob me! im a bot!', flags: MessageFlags.Ephemeral });
+			resetCooldown(robberID, interaction);
+			return;
+		}
+		else if (targetID === robberID) {
 			await interaction.reply({ content: 'wait you can\'t rob yourself? what are you doing!?', flags: MessageFlags.Ephemeral });
 			resetCooldown(robberID, interaction);
 			return;
@@ -52,7 +62,6 @@ module.exports = {
 
 			const robberBalance = robber.balance;
 			const targetBalance = target.balance;
-			const ratio = robberBalance / targetBalance;
 
 			const robberFailStreak = robber.robberyfailstreak;
 
@@ -62,9 +71,9 @@ module.exports = {
 				resetCooldown(robberID, interaction);
 				return;
 			}
-			// the maximum target has to at least form a ratio of 0.01
-			if (ratio < 0.01) {
-				await interaction.reply({ content: `out of range. please choose a target under **$${Math.floor(robberBalance / 0.01)}**`, flags: MessageFlags.Ephemeral });
+			// the maximum target has to have at least a 1% chance to rob
+			if (calculateRobChance(targetBalance, robberBalance, 0) < 0.01) {
+				await interaction.reply({ content: `out of range. please choose a target under **$${calculateMaxTargetBalance(robberBalance)}**`, flags: MessageFlags.Ephemeral });
 				resetCooldown(robberID, interaction);
 				return;
 			}
@@ -156,7 +165,7 @@ const rob = async (targetID, robberID, targetBalance, robChance, interaction) =>
 
 const failedRob = async (robberID, robber, robChance, interaction) => {
 	arrestedUsers.set(robberID, Date.now());
-	const moneyLost = Math.floor(robber.balance * 0.05);
+	const moneyLost = Math.floor(robber.balance * 0.10);
 
 	await updateBalance(robberID, -moneyLost);
 	await updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
@@ -164,10 +173,11 @@ const failedRob = async (robberID, robber, robChance, interaction) => {
 };
 
 const createEmbedElement = (robberFailStreak, robChance, targetID, targetUser, interaction) => {
+	const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
 	return new EmbedBuilder()
 		.setColor(0x1426c9)
 		.setAuthor({
-			name: `${interaction.user.globalName}`,
+			name: `${name}`,
 			iconURL: interaction.user.displayAvatarURL(),
 		})
 		.setTitle('Robbery')
@@ -194,7 +204,26 @@ const setChanceToPercent = (robChance) => {
 	return Math.trunc(robChance * 10000) / 100;
 };
 
+const calculateMaxTargetBalance = (robberBalance) => {
+	return Math.trunc((robberBalance + 1) / (Math.pow(99, -1 / 0.9)) - 1);
+};
+
 const calculateRobChance = (targetBalance, robberBalance, robberFailStreak) => {
 	const A = Math.min(Math.log(robberBalance + 1) - Math.log(targetBalance + 1), Math.log(maxRatio));
 	return 1 / (1 + Math.pow(Math.E, -(moneyTuneCoeff * A + pityCoeff * robberFailStreak)));
+};
+
+const checkForActiveGames = async (interactionUserID, interaction) => {
+	if (activeGames.has(interactionUserID)) {
+		try {
+			const existingGame = activeGames.get(interactionUserID).resource.message;
+			await existingGame.reply({ content: `${interaction.user} you can\t rob anyone! you have a **game** going!` });
+		}
+		catch (error) {
+			console.error('an error occured when reaching the existing game', error);
+		}
+		resetCooldown(interactionUserID, interaction);
+		return true;
+	}
+	return false;
 };
