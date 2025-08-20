@@ -4,7 +4,7 @@ const { activeGames } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
 const maxRatio = 3;
-const moneyTuneCoeff = 0.85;
+const moneyTuneCoeff = 0.875;
 const pityCoeff = 0.19;
 
 module.exports = {
