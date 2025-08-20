@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
-const { activeGames, rehabilitatedUsers, arrestedUsers } = require('../../game/blackJackState');
+const { activeGames, rehabilitatedUsers } = require('../../game/blackJackState');
 const { playBlackJackGame } = require('../../game/playBlackJackGame');
 const { getUser, updateAfterBlackJack } = require('../../database/db.js');
 
@@ -31,10 +31,6 @@ module.exports = {
 		// if they did bet, then play a blackjack game with money on the line
 		try {
 			if (await checkIfRehabilitated(interactionUserID, interaction)) {
-				return;
-			}
-
-			if (await checkIfArrested(interactionUserID, interaction)) {
 				return;
 			}
 
@@ -95,18 +91,6 @@ const checkIfRehabilitated = async (interactionUserID, interaction) => {
 			return false;
 		}
 		await interaction.reply('you are in rehabilitation. please wait for the next day (12 am) to continue playing.');
-		return true;
-	}
-	return false;
-};
-
-const checkIfArrested = async (interactionUserID, interaction) => {
-	if (arrestedUsers.has(interactionUserID)) {
-		if (Date.now() - 900000 >= arrestedUsers.get(interactionUserID)) {
-			arrestedUsers.delete(interactionUserID);
-			return false;
-		}
-		await interaction.reply('you\'ve faced a gambling penalty for attempting to rob. please wait 15 minutes from your initial robbery.');
 		return true;
 	}
 	return false;

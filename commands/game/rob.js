@@ -1,11 +1,11 @@
 const { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
-const { activeGames, arrestedUsers } = require('../../game/blackJackState');
+const { activeGames } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
 const maxRatio = 3;
-const moneyTuneCoeff = 0.9;
-const pityCoeff = 0.18;
+const moneyTuneCoeff = 0.85;
+const pityCoeff = 0.19;
 
 module.exports = {
 	cooldown: 3600,
@@ -164,26 +164,26 @@ const rob = async (targetID, robberID, targetBalance, robChance, interaction) =>
 };
 
 const failedRob = async (robberID, robber, robChance, interaction) => {
-	arrestedUsers.set(robberID, Date.now());
 	const moneyLost = Math.floor(robber.balance * 0.10);
 
 	await updateBalance(robberID, -moneyLost);
 	await updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
-	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now face a **15 minute** punishment. **no gambling!**`, embeds: [], components: [] });
+	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now have a **1 hour cooldown.**`, embeds: [], components: [] });
 };
 
-const createEmbedElement = (robberFailStreak, robChance, targetID, targetUser, interaction) => {
-	const name = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
+const createEmbedElement = (robberFailStreak, robChance, targetUser, interaction) => {
+	const robberName = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
+	const targetName = targetUser.globalName ? targetUser.globalName : targetUser.username;
 	return new EmbedBuilder()
 		.setColor(0x1426c9)
 		.setAuthor({
-			name: `${name}`,
+			name: `${robberName}`,
 			iconURL: interaction.user.displayAvatarURL(),
 		})
 		.setTitle('Robbery')
 		.setTimestamp(Date.now())
 		.setDescription(
-			`Probability of Success: **${setChanceToPercent(robChance)}%**\nRobbery Fail Streak: ${robberFailStreak}\n\nDo you wish to continue the robbery on **${targetUser.globalName}**?`,
+			`Probability of Success: **${setChanceToPercent(robChance)}%**\nRobbery Fail Streak: ${robberFailStreak}\n\nDo you wish to continue the robbery on **${targetName}**?`,
 		);
 };
 
