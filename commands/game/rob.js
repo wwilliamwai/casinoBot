@@ -80,7 +80,7 @@ module.exports = {
 
 			const robChance = calculateRobChance(targetBalance, robberBalance, robberFailStreak);
 
-			const embed = createEmbedElement(robberFailStreak, robChance, targetID, targetUser, interaction);
+			const embed = createEmbedElement(robberFailStreak, robChance, targetUser, interaction);
 			const row = createButtons();
 
 			const response = await interaction.reply({ embeds: [embed], components: [row], withResponse: true });
