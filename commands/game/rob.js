@@ -153,22 +153,22 @@ const rob = async (targetID, robberID, targetBalance, robChance, interaction) =>
 		moneyRobbed = 1;
 	}
 
+	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you managed to rob <@${targetID}> to earn **$${moneyRobbed}!**`, embeds: [], components: [] });
+
 	await updateBalance(robberID, moneyRobbed);
 	await updateBalance(targetID, -moneyRobbed);
 
 	// reset the fail streak to 0
 	await updateRobberyFailStreak(robberID, 0);
-	resetCooldown(robberID, interaction);
-
-	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you managed to rob <@${targetID}> to earn **$${moneyRobbed}!**`, embeds: [], components: [] });
 };
 
 const failedRob = async (robberID, robber, robChance, interaction) => {
 	const moneyLost = Math.floor(robber.balance * 0.10);
 
+	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now have a **1 hour cooldown.**`, embeds: [], components: [] });
+
 	await updateBalance(robberID, -moneyLost);
 	await updateRobberyFailStreak(robberID, robber.robberyfailstreak + 1);
-	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now have a **1 hour cooldown.**`, embeds: [], components: [] });
 };
 
 const createEmbedElement = (robberFailStreak, robChance, targetUser, interaction) => {
