@@ -173,7 +173,7 @@ const failedRob = async (robberID, robber, robChance, interaction) => {
 
 const createEmbedElement = (robberFailStreak, robChance, targetUser, interaction) => {
 	const robberName = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-	const targetName = targetUser.globalName ? targetUser.globalName : targetUser.username;
+	const targetName = targetUser.nickname ? targetUser.nickname : targetUser.username;
 	return new EmbedBuilder()
 		.setColor(0x1426c9)
 		.setAuthor({
@@ -209,6 +209,10 @@ const calculateMaxTargetBalance = (robberBalance) => {
 };
 
 const calculateRobChance = (targetBalance, robberBalance, robberFailStreak) => {
+	// that's dom and that's intentionally cuz i guess he needs 100% rob chance as robin hood.
+	if (robberBalance < 0) {
+		return 1;
+	}
 	const A = Math.min(Math.log(robberBalance + 1) - Math.log(targetBalance + 1), Math.log(maxRatio));
 	return 1 / (1 + Math.pow(Math.E, -(moneyTuneCoeff * A + pityCoeff * robberFailStreak)));
 };
