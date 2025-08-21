@@ -173,7 +173,7 @@ const failedRob = async (robberID, robber, robChance, interaction) => {
 
 const createEmbedElement = (robberFailStreak, robChance, targetUser, interaction) => {
 	const robberName = interaction.user.globalName ? interaction.user.globalName : interaction.user.username;
-	const targetName = targetUser.nickname ? targetUser.nickname : targetUser.username;
+	const targetName = targetUser.globalName ? targetUser.globalName : targetUser.username;
 	return new EmbedBuilder()
 		.setColor(0x1426c9)
 		.setAuthor({

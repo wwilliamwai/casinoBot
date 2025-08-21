@@ -69,14 +69,20 @@ const playBettingGame = async (betAmount, user, interaction) => {
 		await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
 	}
 	else {
-		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackJackStreak, interaction });
+		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackjackstreak, hasDoubleDown: true, interaction });
 		if (endAmount > 0) {
+			if (endAmount > user.balance) {
+				return [user.balance, ++user.blackjackstreak];
+			}
 			return [endAmount, ++user.blackjackstreak];
 		}
 		else if (endAmount === 0) {
 			return [endAmount, user.blackjackstreak];
 		}
 		else {
+			if (Math.abs(endAmount) > user.balance) {
+				return [-user.balance, 0];
+			}
 			return [endAmount, 0];
 		}
 	}

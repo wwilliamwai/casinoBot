@@ -2,7 +2,7 @@ const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags
 const Cards = require('cards.js');
 const { activeGames } = require('./blackJackState');
 
-async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interaction }) {
+async function playBlackJackGame({ betAmount = 0, userWinStreak = null, hasDoubleDown = false, interaction }) {
 	// create the cards for the blackJack game
 	const deck = new Cards(false);
 	const dealerHand = [];
@@ -16,7 +16,7 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 	// create the embed element
 	const gameEmbed = createEmbedElement({ playerHand, dealerHand, userWinStreak, interaction });
 	// create row item
-	const row = createHitStandButtons();
+	const row = createButtons(hasDoubleDown);
 	// send the embeded message
 	const response = await interaction.reply({ embeds: [gameEmbed], components: [row], withResponse: true });
 	activeGames.set(interaction.user.id, response);
@@ -61,6 +61,24 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 					collector.stop('got21');
 				}
 			}
+			if (i.customId === 'double-down') {
+				playerHand.push(deck.takeTopCard());
+				playerSum = sumOfHand(playerHand);
+				// check if the player busted after hitting
+				if (playerSum > 21) {
+					collector.stop('bust');
+				}
+				else if (playerSum === 21) {
+					collector.stop('got21');
+				}
+				else {
+					while (dealerSum < 17) {
+						dealerHand.push(deck.takeTopCard());
+						dealerSum = sumOfHand(dealerHand);
+					}
+					collector.stop('double-down-end');
+				}
+			}
 			if (i.customId === 'stand') {
 				while (dealerSum < 17) {
 					dealerHand.push(deck.takeTopCard());
@@ -99,6 +117,10 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
 				break;
+			case 'double-down-end':
+				activeGames.delete(interaction.user.id);
+				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount * 2, interaction));
+				break;
 			case 'dealer-end':
 				activeGames.delete(interaction.user.id);
 				resolve(await displayGameResult(playerHand, dealerHand, row, userWinStreak, betAmount, interaction));
@@ -106,7 +128,7 @@ async function playBlackJackGame({ betAmount = 0, userWinStreak = null, interact
 			}
 		});
 	});
-}
+};
 
 // helper methods
 const displayGameResult = async (playerHand, dealerHand, row, userWinStreak, betAmount, interaction) => {
@@ -146,18 +168,31 @@ const updateEmbed = async ({ content = null, playerHand, dealerHand, row, userWi
 	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
 };
 
-const createHitStandButtons = () => {
-	// create row item
-	return new ActionRowBuilder().addComponents(
+const createButtons = (hasDoubleDown) => {
+	const buttons = [
 		new ButtonBuilder()
 			.setCustomId('hit')
 			.setLabel('Hit\u{2713}')
 			.setStyle(ButtonStyle.Secondary),
+	];
+
+	if (hasDoubleDown) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('double-down')
+				.setLabel('Double Down\u{23EB}')
+				.setStyle(ButtonStyle.Secondary),
+		);
+	}
+
+	buttons.push(
 		new ButtonBuilder()
 			.setCustomId('stand')
 			.setLabel('Stand\u{274C}')
 			.setStyle(ButtonStyle.Secondary),
 	);
+
+	return new ActionRowBuilder().addComponents(...buttons);
 };
 
 const createEmbedElement = ({ playerHand, dealerHand, userWinStreak, interaction, isDealerTurn = false }) => {
@@ -175,7 +210,7 @@ const createEmbedElement = ({ playerHand, dealerHand, userWinStreak, interaction
 			name: `${interaction.user.globalName}`,
 			iconURL: interaction.user.displayAvatarURL(),
 		})
-		.setTitle('BlackJack')
+		.setTitle('BlackJack\n-------------------------------------')
 		.setTimestamp(Date.now())
 		.setDescription(
 			`${betWinStreak}You | ${sumOfHand(playerHand)}\n${handToString(playerHand)}\n\nDealer | ${dealerValue}\n${dealerCards}`);
