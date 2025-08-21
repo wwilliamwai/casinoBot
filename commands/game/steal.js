@@ -7,7 +7,6 @@ const imagePath = path.resolve(__dirname, '..', '..', 'steal.png');
 
 const robinHoodID = '623750889366224906';
 module.exports = {
-	cooldown: 86400,
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('steal')
