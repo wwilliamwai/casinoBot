@@ -7,8 +7,7 @@ module.exports = {
 		if (message.author.bot) return;
 
 		if (message.mentions.users.has(message.client.user.id) && message.mentions.users.size === 1) {
-			console.log('hi');
-			await message.reply('hi :)');
+			await message.reply('im just a baby');
 		}
 	},
 };
