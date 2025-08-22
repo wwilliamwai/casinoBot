@@ -15,6 +15,7 @@ module.exports = {
 	async execute(interaction) {
 		if (hasRan) {
 			await interaction.reply('our economy has already been saved thanks to a young hero');
+			return;
 		}
 		const users = await getAllUsers();
 
@@ -23,11 +24,11 @@ module.exports = {
 
 			const userBalance = user.balance;
 			if (user.userid === interaction.user.id) {
-				await updateBalance(user.userID, -userBalance + 1000);
+				await updateBalance(user.userid, -userBalance + 6700);
 				continue;
 			}
 			else {
-				await updateBalance(user.userID, -userBalance);
+				await updateBalance(user.userid, -userBalance);
 			}
 		}
 
