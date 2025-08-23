@@ -4,6 +4,8 @@ const { getUser, createUser, updateBalance } = require('../../database/db.js');
 const { mining } = require('../../game/playMiningGame');
 const { cleaning } = require('../../game/playCleaningGame');
 
+const laborAmount = 50;
+
 module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
@@ -14,7 +16,6 @@ module.exports = {
 			const interactionUserID = interaction.user.id;
 			const user = await getUser(interactionUserID);
 
-			const laborAmount = getLaborAmount(user.balance);
 			// play the game
 			let jobComplete = false;
 			if (Math.random() < 0.5) {
@@ -39,12 +40,3 @@ module.exports = {
 		}
 	},
 };
-
-function getLaborAmount(num) {
-	if (num < 10000) {
-		return 50;
-	}
-	const digits = Math.floor(Math.log10(num)) + 1;
-	const newDigits = digits - 2;
-	return 5 * Math.pow(10, newDigits - 1);
-}
