@@ -164,7 +164,9 @@ const updateEmbed = async ({ content = null, playerHand, dealerHand, row, userWi
 		userWinStreak: userWinStreak,
 		interaction: interaction,
 		isDealerTurn: isDealerTurn });
-
+	if (row.components[1].data.custom_id === 'double-down') {
+		row.components.splice(1, 1);
+	}
 	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
 };
 
