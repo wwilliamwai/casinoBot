@@ -47,7 +47,8 @@ module.exports = {
 
 				const gameEndData = await playBettingGame(betAmount, user, interaction);
 				const existingGame = activeGames.get(interactionUserID).resource.message;
-				await existingGame.reply({ content: `${interaction.user} you now have $${user.balance += Number(gameEndData[0])} in your balance.` });
+				const updatedBalance = user.balance += gameEndData[0];
+				await existingGame.reply({ content: `${interaction.user} you now have $${updatedBalance} in your balance.` });
 				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {

@@ -6,7 +6,7 @@ module.exports = {
 	once: true,
 	execute(client) {
 		console.log(`Ready! Logged in as ${client.user.tag}`);
-		client.user.setActivity('probably being worked on', { type: ActivityType.Custom, state: 'remove scaling from wages' });
+		client.user.setActivity('probably being worked on', { type: ActivityType.Custom, state: 'blackjack ui + code update' });
 
 		// setup a way to type in general chat through the vscode terminal
 		const rl = readline.createInterface({
