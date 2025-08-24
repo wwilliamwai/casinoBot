@@ -3,6 +3,8 @@ const { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, Butto
 const { activeGames } = require('../../game/blackJackState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
+const robMoneyPercent = 0.15;
+const failPercentLoss = 0.05;
 const maxRatio = 3;
 const moneyTuneCoeff = 0.875;
 const pityCoeff = 0.19;
@@ -12,7 +14,7 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('rob')
-		.setDescription('Chance to rob 25% from the user you select!')
+		.setDescription('Chance to rob 15% from the user you select!')
 		.addUserOption(option =>
 			option.setName('target')
 				.setDescription('Your robbing target')
@@ -146,7 +148,7 @@ const resetCooldown = (robberID, interaction) => {
 };
 
 const rob = async (targetID, robberID, targetBalance, robChance, interaction) => {
-	let moneyRobbed = Math.floor(targetBalance * 0.25);
+	let moneyRobbed = Math.floor(targetBalance * robMoneyPercent);
 
 	// the target has to have at least 1 dollar, so just rob that dollar
 	if (moneyRobbed < 1) {
@@ -163,7 +165,7 @@ const rob = async (targetID, robberID, targetBalance, robChance, interaction) =>
 };
 
 const failedRob = async (robberID, robber, robChance, interaction) => {
-	const moneyLost = Math.floor(robber.balance * 0.10);
+	const moneyLost = Math.floor(robber.balance * failPercentLoss);
 
 	await interaction.editReply({ content: `<@${robberID}> with a **${setChanceToPercent(robChance)}%** chance, you failed to rob your target! you now have a **1 hour cooldown.**`, embeds: [], components: [] });
 

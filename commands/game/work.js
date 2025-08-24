@@ -9,7 +9,7 @@ const laborAmount = 50;
 module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
-		.setName('labor')
+		.setName('work')
 		.setDescription('do work to make more money.'),
 	async execute(interaction) {
 		try {

@@ -12,23 +12,22 @@ module.exports = {
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
 
-		if (await checkIfRehabilitated(interactionUserID, interaction)) {
-			return;
-		}
+		if (await checkIfRehabilitated(interactionUserID, interaction)) return;
 
-		if (await checkForActiveGames(interactionUserID, interaction)) {
-			return;
-		}
+		if (await checkForActiveGames(interactionUserID, interaction)) return;
 
 		try {
 			const user = await getUser(interactionUserID);
 
 			if (user) {
-				// to fix bug if the data changes mid game or like if 2 players at the same time.
-				// has the endAmount and the most updated blackjackstreak
+				if (user.balance <= 0) {
+					await interaction.reply({ content: `${interaction.user}. you don't have any money to all in`, flags: MessageFlags.Ephemeral });
+					return;
+				}
 				activeGames.set(interactionUserID, null);
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
-
+				const existingGame = activeGames.get(interactionUserID).resource.message;
+				await existingGame.reply({ content: `${interaction.user} you now have $${user.balance += gameEndData[0]} in your balance.` });
 				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
@@ -48,24 +47,8 @@ module.exports = {
 // helper functions
 
 const playBettingGame = async (betAmount, user, interaction) => {
-	if (user.balance < betAmount) {
-		await interaction.reply({ content: 'you don\'t have enough money.', flags: MessageFlags.Ephemeral });
-	}
-	else if (betAmount < 0) {
-		await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
-	}
-	else {
-		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackjackstreak, interaction });
-		if (endAmount > 0) {
-			return [endAmount, ++user.blackjackstreak];
-		}
-		else if (endAmount === 0) {
-			return [endAmount, user.blackjackstreak];
-		}
-		else {
-			return [endAmount, 0];
-		}
-	}
+	const gameEndData = await playBlackJackGame({ betAmount, winStreak: user.blackjackstreak, hasDoubleDown: false, interaction });
+	return [...gameEndData];
 };
 
 const checkIfRehabilitated = async (interactionUserID, interaction) => {

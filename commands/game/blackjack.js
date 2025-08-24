@@ -16,9 +16,7 @@ module.exports = {
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
 
-		if (await checkForActiveGames(interactionUserID, interaction)) {
-			return;
-		}
+		if (await checkForActiveGames(interactionUserID, interaction)) return;
 
 		const betAmount = interaction.options.getNumber('bet');
 
@@ -26,22 +24,30 @@ module.exports = {
 		if (!betAmount || betAmount === 0) {
 			activeGames.set(interactionUserID, null);
 			await playBlackJackGame({ betAmount: 0, interaction });
+			activeGames.delete(interactionUserID);
 			return;
 		}
 		// if they did bet, then play a blackjack game with money on the line
 		try {
-			if (await checkIfRehabilitated(interactionUserID, interaction)) {
-				return;
-			}
+			if (await checkIfRehabilitated(interactionUserID, interaction)) return;
 
 			const user = await getUser(interactionUserID);
 
 			// if the user's data does exist
 			if (user) {
+				if (user.balance < betAmount) {
+					await interaction.reply({ content: 'you don\'t have enough money.', flags: MessageFlags.Ephemeral });
+					return;
+				}
+				else if (betAmount < 0) {
+					await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
+					return;
+				}
 				activeGames.set(interactionUserID, null);
 
 				const gameEndData = await playBettingGame(betAmount, user, interaction);
-
+				const existingGame = activeGames.get(interactionUserID).resource.message;
+				await existingGame.reply({ content: `${interaction.user} you now have $${user.balance += gameEndData[0]} in your balance.` });
 				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
@@ -62,30 +68,8 @@ module.exports = {
 
 
 const playBettingGame = async (betAmount, user, interaction) => {
-	if (user.balance < betAmount) {
-		await interaction.reply({ content: 'you don\'t have enough money.', flags: MessageFlags.Ephemeral });
-	}
-	else if (betAmount < 0) {
-		await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
-	}
-	else {
-		const endAmount = await playBlackJackGame({ betAmount, userWinStreak: user.blackjackstreak, hasDoubleDown: true, interaction });
-		if (endAmount > 0) {
-			if (endAmount > user.balance) {
-				return [user.balance, ++user.blackjackstreak];
-			}
-			return [endAmount, ++user.blackjackstreak];
-		}
-		else if (endAmount === 0) {
-			return [endAmount, user.blackjackstreak];
-		}
-		else {
-			if (Math.abs(endAmount) > user.balance) {
-				return [-user.balance, 0];
-			}
-			return [endAmount, 0];
-		}
-	}
+	const gameEndData = await playBlackJackGame({ betAmount, userBalance: user.balance, winStreak: user.blackjackstreak, hasDoubleDown: true, interaction });
+	return [...gameEndData];
 };
 
 const checkIfRehabilitated = async (interactionUserID, interaction) => {
