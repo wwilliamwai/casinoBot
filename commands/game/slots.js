@@ -22,7 +22,7 @@ module.exports = {
 		const betAmount = interaction.options.getNumber('bet');
 
 		if (betAmount <= 0) {
-			await interaction.reply({ content: 'you must bet an amount for slots', flags: MessageFlags.Ephemeral});
+			await interaction.reply({ content: 'you must bet an amount for slots', flags: MessageFlags.Ephemeral });
 			return;
 		}
 
