@@ -17,7 +17,7 @@ const updateEmbed = async (row, betAmount, interaction) => {
 	let rowString = '';
 	const payout = getPayout(row, betAmount);
 	for (let i = 0; i < 3; i++) {
-		rowString += row[i];
+		rowString += `${row[i]}${ i != 2 ? ' | ' : ''}`;
 
 		await delay(300);
 		const updatedEmbed = new EmbedBuilder()
