@@ -40,7 +40,7 @@ module.exports = {
 				activeGames.set(interactionUserID, null);
 				const amountEarned = await playSlotsGame(betAmount, interaction);
 				const existingGame = activeGames.get(interactionUserID).resource.message;
-				await existingGame.reply({ content: `${interaction.user} now has $${Number(user.balance) + Number(amountEarned)} in their balance.` });
+				await existingGame.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(amountEarned)} in your balance.` });
 				updateBalance(interactionUserID, amountEarned);
 
 			}
