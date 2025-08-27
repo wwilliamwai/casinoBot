@@ -10,7 +10,7 @@ module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('work')
-		.setDescription('do work to make more money.'),
+		.setDescription('Do work to make more money.'),
 	async execute(interaction) {
 		try {
 			const interactionUserID = interaction.user.id;

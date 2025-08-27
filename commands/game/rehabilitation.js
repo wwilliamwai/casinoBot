@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { rehabilitatedUsers } = require('../../game/blackJackState');
+const { rehabilitatedUsers } = require('../../game/gamblingUserState');
 
 module.exports = {
 	cooldown: 3600,

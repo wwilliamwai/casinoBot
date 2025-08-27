@@ -1,6 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags, ComponentType } = require('discord.js');
 const Cards = require('cards.js');
-const { activeGames } = require('./blackJackState');
+const { activeGames } = require('./gamblingUserState');
 
 async function playBlackJackGame({ betAmount = 0, userBalance = null, winStreak = null, hasDoubleDown = false, interaction }) {
 	// setup the gameData class

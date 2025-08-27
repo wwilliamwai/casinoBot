@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
-const { activeGames } = require('../../game/blackJackState');
+const { activeGames } = require('../../game/gamblingUserState');
 const { getUser, createUser, updateBalance, updateRobberyFailStreak } = require('../../database/db.js');
 
 const robMoneyPercent = 0.15;

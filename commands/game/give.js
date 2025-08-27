@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { getUser, createUser, updateBalance } = require('../../database/db.js');
-const { activeGames } = require('../../game/blackJackState');
+const { activeGames } = require('../../game/gamblingUserState');
 
 module.exports = {
 	category: 'game',

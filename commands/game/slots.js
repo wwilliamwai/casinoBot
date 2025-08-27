@@ -1,17 +1,18 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 const { activeGames, rehabilitatedUsers } = require('../../game/gamblingUserState');
-const { playBlackJackGame } = require('../../game/playBlackJackGame');
-const { getUser, updateAfterBlackJack } = require('../../database/db.js');
+const { playSlotsGame } = require('../../game/playSlotsGame');
+const { getUser, updateBalance } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
 	data: new SlashCommandBuilder()
-		.setName('blackjack')
-		.setDescription('Play a game of blackjack')
+		.setName('slots')
+		.setDescription('Play a game of slots to earn some money!')
 		.addNumberOption(option =>
 			option.setName('bet')
-				.setDescription('The betting amount'),
+		        .setDescription('The betting amount')
+		        .setRequired(true),
 		),
 	async execute(interaction) {
 		const interactionUserID = interaction.user.id;
@@ -20,14 +21,11 @@ module.exports = {
 
 		const betAmount = interaction.options.getNumber('bet');
 
-		// if they didn't bet, then play a normal blackjack game
-		if (!betAmount || betAmount === 0) {
-			activeGames.set(interactionUserID, null);
-			await playBlackJackGame({ betAmount: 0, interaction });
-			activeGames.delete(interactionUserID);
+		if (betAmount <= 0) {
+			await interaction.reply({ content: 'you must bet an amount for slots', flags: MessageFlags.Ephemeral});
 			return;
 		}
-		// if they did bet, then play a blackjack game with money on the line
+
 		try {
 			if (await checkIfRehabilitated(interactionUserID, interaction)) return;
 
@@ -39,37 +37,25 @@ module.exports = {
 					await interaction.reply({ content: 'you don\'t have enough money.', flags: MessageFlags.Ephemeral });
 					return;
 				}
-				else if (betAmount < 0) {
-					await interaction.reply({ content: 'not a valid amount to bet.', flags: MessageFlags.Ephemeral });
-					return;
-				}
 				activeGames.set(interactionUserID, null);
-
-				const gameEndData = await playBettingGame(betAmount, user, interaction);
+				const amountEarned = await playSlotsGame(betAmount, interaction);
 				const existingGame = activeGames.get(interactionUserID).resource.message;
-				await existingGame.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
-				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
+				await existingGame.reply({ content: `${interaction.user} now has $${user.balance += Number(amountEarned)} in their balance.` });
+				updateBalance(interactionUserID, amountEarned);
+
 			}
 			else {
 				await interaction.reply({ content: `${interaction.user}. you haven't collected any money yet. do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
 			}
 		}
 		catch (error) {
-			console.error('Error handling blackjack command', error);
-			await interaction.reply({ content: 'Something went wrong with the blackjack game', flags: MessageFlags.Ephemeral });
+			console.error('Error processing the slots command', error);
+			await interaction.editReply({ content: 'Something went wrong while trying to run slots', flags: MessageFlags.Ephemeral });
 		}
 		finally {
 			activeGames.delete(interactionUserID);
 		}
 	},
-};
-
-// helper functions
-
-
-const playBettingGame = async (betAmount, user, interaction) => {
-	const gameEndData = await playBlackJackGame({ betAmount, userBalance: user.balance, winStreak: user.blackjackstreak, hasDoubleDown: true, interaction });
-	return [...gameEndData];
 };
 
 const checkIfRehabilitated = async (interactionUserID, interaction) => {
