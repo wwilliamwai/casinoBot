@@ -62,7 +62,7 @@ async function playBlackJackGame({ betAmount = 0, userBalance = null, winStreak 
 			switch (reason) {
 			case 'messageDelete':
 				if (game.betAmount != 0) {
-					interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
+					await interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
 				}
 				resolve([-game.betAmount, 0]);
 				break;
