@@ -28,7 +28,7 @@ module.exports = {
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
 				const existingGame = activeGames.get(interactionUserID).resource.message;
 				if (!existingGame) {
-					interaction.channel.send('game got deleted.);
+					interaction.channel.send('game got deleted.');
 				} 
 				else {
 					await existingGame.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
