@@ -138,8 +138,8 @@ const updateEmbed = async ({ content = null, game, row, interaction, isDealerTur
 		interaction: interaction,
 		isDealerTurn: isDealerTurn });
 	// removes the double-down option if the game is updated once
-	if (row.components[1].data.custom_id === 'double-down') {
-		row.components.splice(1, 1);
+	if (row.components[2].data.custom_id === 'double-down') {
+		row.components.splice(2, 1);
 	}
 	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
 };
@@ -152,6 +152,13 @@ const createButtons = (hasDoubleDown) => {
 			.setStyle(ButtonStyle.Secondary),
 	];
 
+	buttons.push(
+		new ButtonBuilder()
+			.setCustomId('stand')
+			.setLabel('Stand\u{274C}')
+			.setStyle(ButtonStyle.Secondary),
+	);
+
 	if (hasDoubleDown) {
 		buttons.push(
 			new ButtonBuilder()
@@ -160,13 +167,6 @@ const createButtons = (hasDoubleDown) => {
 				.setStyle(ButtonStyle.Secondary),
 		);
 	}
-
-	buttons.push(
-		new ButtonBuilder()
-			.setCustomId('stand')
-			.setLabel('Stand\u{274C}')
-			.setStyle(ButtonStyle.Secondary),
-	);
 
 	return new ActionRowBuilder().addComponents(...buttons);
 };
