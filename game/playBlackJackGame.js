@@ -136,9 +136,11 @@ const updateEmbed = async ({ content = null, game, row, interaction, isDealerTur
 		game: game,
 		interaction: interaction,
 		isDealerTurn: isDealerTurn });
-	// removes the double-down option if the game is updated once
-	if (row.components[1].data.custom_id === 'double-down') {
-		row.components.splice(1, 1);
+	// removes the extra buttons after the first update
+	if (game.playerHands[index].length > 2) {
+		row.components = row.components.filter(component => {
+  		return component.data.custom_id !== 'double-down';
+		});
 	}
 	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
 };
