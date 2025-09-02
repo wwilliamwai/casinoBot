@@ -18,7 +18,7 @@ module.exports = {
 
 		if (await checkForActiveGames(interactionUserID, interaction)) return;
 
-		const betAmount = interaction.options.getNumber('bet');
+		const betAmount = Math.floor(interaction.options.getNumber('bet'));
 
 		// if they didn't bet, then play a normal blackjack game
 		if (!betAmount || betAmount === 0) {
