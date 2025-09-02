@@ -313,10 +313,10 @@ class GameData {
 		this.deck = new Cards(false);
 		this.playerHands = [];
     	this.dealerHand = [];
-    	this.betAmounts = [betAmount];
-		this.totalCommitted = betAmount;
-    	this.balance = balance;
-    	this.winStreak = winStreak;
+    	this.betAmounts = [Number(betAmount)];
+		this.totalCommitted = Number(betAmount);
+    	this.balance = Number(balance);
+    	this.winStreak = Number(winStreak);
 		this.splitGameInteractions = [];
 		this.splitAces = [];
 		this.setUpHands();
@@ -338,7 +338,7 @@ class GameData {
 		this.playerSums.push(this.sumOfHand(this.playerHands[newIndex]));
 
 		// duplicate the bet for the new hand
-		this.betAmounts.push(this.betAmounts[oldIndex]);
+		this.betAmounts.push(Number(this.betAmounts[oldIndex]));
 		this.totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 
 		// store the interaction for the new hand
