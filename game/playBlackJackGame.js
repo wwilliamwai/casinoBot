@@ -220,11 +220,14 @@ const updateEmbed = async ({ content = null, game, index, row, interaction, show
 	const filteredComponents = row.components.slice().filter(component => {
 		const id = component.data.custom_id;
 
-		// Remove double-down and split after first two cards
-		if (game.playerHands[index].length > 2 && (id === 'double-down' || id === 'split')) return false;
+		// Remove double-down if not allowed OR hand has more than 2 cards
+		if (id === 'double-down' && (!game.playerCanDoubleDown(index) || game.playerHands[index].length > 2)) return false;
+
+		// Remove split if not allowed OR hand has more than 2 cards
+		if (id === 'split' && (!game.playerCanSplit(index) || game.playerHands[index].length > 2)) return false;
 
 		// Remove hit if this hand is a split Ace
-		if (game.splitAces.includes(index) && id === 'hit') return false;
+		if (id === 'hit' && game.splitAces.includes(index)) return false;
 
 		return true;
 	});
