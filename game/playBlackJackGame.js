@@ -94,6 +94,11 @@ const displayGameEndResult = async ({ game, index, row, response, interaction })
 		endAmount = -game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? 0 : null;
 	}
+	else if (game.playerSums[index] === 21 && game.playerHands[index].length === 2) {
+		message = 'blackjack!!!!';
+		endAmount = game.betAmounts[index] * 1.5;
+		game.winStreak = game.winStreak != null ? game.winStreak + 1 : null;
+	}
 	else if (game.playerSums[index] === game.dealerSum) {
 		message = 'wait. you guys drew? what the sigma!';
 	}
@@ -222,34 +227,44 @@ const updateEmbed = async ({ content = null, game, index, row, interaction, show
 };
 
 const createButtons = (game, index) => {
-	const buttons = [
-		new ButtonBuilder()
-			.setCustomId('hit')
-			.setLabel('Hit\u{2713}')
-			.setStyle(ButtonStyle.Secondary),
-	];
+	const buttons = [];
 
-	buttons.push(
-		new ButtonBuilder()
-			.setCustomId('stand')
-			.setLabel('Stand\u{274C}')
-			.setStyle(ButtonStyle.Secondary),
-	);
+	const isSplitAce = game.splitAces.includes(index);
 
-	if (game.playerCanDoubleDown(index)) {
+	// Hit button: only if NOT split Ace
+	if (!isSplitAce) {
 		buttons.push(
 			new ButtonBuilder()
-				.setCustomId('double-down')
-				.setLabel('Double Down\u{23EB}')
+				.setCustomId('hit')
+				.setLabel('Hit\u2713')
 				.setStyle(ButtonStyle.Secondary),
 		);
 	}
 
+	// Stand button: always allowed
+	buttons.push(
+		new ButtonBuilder()
+			.setCustomId('stand')
+			.setLabel('Stand\u274C')
+			.setStyle(ButtonStyle.Secondary),
+	);
+
+	// Double Down: only if allowed and not split Ace
+	if (!isSplitAce && game.playerCanDoubleDown(index)) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('double-down')
+				.setLabel('Double Down\u23EB')
+				.setStyle(ButtonStyle.Secondary),
+		);
+	}
+
+	// Split: only if allowed
 	if (game.playerCanSplit(index)) {
 		buttons.push(
 			new ButtonBuilder()
 				.setCustomId('split')
-				.setLabel('Split \u{00F7}')
+				.setLabel('Split \u00F7')
 				.setStyle(ButtonStyle.Secondary),
 		);
 	}
@@ -288,6 +303,7 @@ class GameData {
     	this.balance = balance;
     	this.winStreak = winStreak;
 		this.splitGameInteractions = [];
+		this.splitAces = [];
 		this.setUpHands();
 	}
 
@@ -311,18 +327,24 @@ class GameData {
 
 		// store the interaction for the new hand
 		this.splitGameInteractions.push(interaction);
+
+		// keep track if indices have split aces
+		if (this.playerHands[oldIndex][0][1] === 'ace') {
+			this.splitAces.push(oldIndex);
+			this.splitAces.push(newIndex);
+		}
 	}
 
 	playerCanDoubleDown(i) {
-		if (this.betAmounts[i] != 0 && this.betAmounts[i] != this.balance) {
-			return true;
-		}
-		return false;
+		return (
+			this.betAmounts[i] != 0 &&
+		this.betAmounts[i] != this.balance && !this.splitAces.includes(i)
+		);
 	}
 
 	playerCanSplit(i) {
 		return (
-			this.playerHands[i][0] === this.playerHands[i][1] &&
+			this.playerHands[i][0][1] === this.playerHands[i][1][1] &&
         this.betAmounts[i] * 2 <= this.balance
 		);
 	}
