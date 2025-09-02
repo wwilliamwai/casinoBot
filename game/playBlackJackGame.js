@@ -4,10 +4,6 @@ const { activeGames } = require('./gamblingUserState');
 const { updateBalance, updateBlackJackStreak } = require('../database/db.js');
 
 async function startBlackJackSession({ betAmount = 0, userBalance = 1, winStreak = null, interaction }) {
-	if (interaction.user.id != '218140977884430336') {
-		interaction.reply('sorry testing something sry sry sry sr syr');
-		return;
-	}
 	// setup the gameData class
 	const game = new GameData(betAmount, userBalance, winStreak);
 
@@ -345,16 +341,19 @@ class GameData {
 	}
 
 	playerCanDoubleDown(i) {
+		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 		return (
 			this.betAmounts[i] != 0 &&
-		this.betAmounts[i] != this.balance && !this.splitAces.includes(i)
+        totalCommitted + this.betAmounts[i] <= this.balance &&
+        !this.splitAces.includes(i)
 		);
 	}
 
 	playerCanSplit(i) {
+		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 		return (
 			this.playerHands[i][0][1] === this.playerHands[i][1][1] &&
-        this.betAmounts[i] * 2 <= this.balance
+        totalCommitted + this.betAmounts[i] <= this.balance
 		);
 	}
 
@@ -368,7 +367,7 @@ class GameData {
 		this.deck.shuffle();
 		this.playerHands.push([this.deck.takeTopCard()]);
 		this.dealerHand.push(this.deck.takeTopCard());
-		this.playerHands[0].push(this.playerHands[0][0]);
+		this.playerHands[0].push(this.deck.takeTopCard());
 		this.dealerHand.push(this.deck.takeTopCard());
 
 		this.playerSums = [this.sumOfHand(this.playerHands[0])];
