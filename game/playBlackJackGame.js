@@ -153,7 +153,7 @@ const handleEnd = async (reason, game, index, row, interaction, response) => {
 	case 'double-down-end':
 		game.addCardToPlayer(index);
 		game.betAmounts[index] = game.betAmounts[index] * 2;
-		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: game.playerHands[index] <= 21 ? true : false });
+		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: game.playerSums[index] <= 21 ? true : false });
 		break;
 	case 'dealer-end':
 		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: true });
