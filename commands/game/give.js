@@ -62,7 +62,7 @@ module.exports = {
 					await updateBalance(senderID, -money);
 					await updateBalance(receiverID, money);
 
-					await interaction.reply(`${interaction.user} gave $${money} to ${receivingUser}!`);
+					await interaction.reply(`${interaction.user} gave **$${money}** to ${receivingUser}!`);
 				}
 			}
 			else {

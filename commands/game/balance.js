@@ -12,7 +12,7 @@ module.exports = {
 			const user = await getUser(interaction.user.id);
 
 			if (user) {
-				interaction.reply(`${interaction.user} has $${user.balance} in their balance.`);
+				interaction.reply(`${interaction.user} has **$${user.balance}** in their balance.`);
 			}
 			else {
 				interaction.reply({ content: `${interaction.user}. you haven't collected any money yet. do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
