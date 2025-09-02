@@ -1,7 +1,11 @@
 const { EmbedBuilder } = require('discord.js');
 const { activeGames } = require('./gamblingUserState');
 
-const symbols = ['🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🍋', '🍋', '🍋', '🍋', '🍉', '🍉', '🍉', '🔔', '🔔', '⭐'];
+const symbols = ['🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒', '🍒',
+	'🍋', '🍋', '🍋', '🍋', '🍋',
+	'🍉', '🍉', '🍉',
+	'🔔', '🔔',
+	'⭐'];
 
 
 async function playSlotsGame(betAmount, interaction) {
@@ -46,19 +50,19 @@ const updateEmbed = async (row, betAmount, interaction) => {
 const getPayout = (row, betAmount) => {
 	if (row[0] === row[1] && row[1] === row[2]) {
 		if (row[0] === '🍒') {
-			return betAmount * 3;
+			return betAmount * 2;
 		}
 		else if (row[0] === '🍋') {
-			return betAmount * 10;
+			return betAmount * 8;
 		}
 		else if (row[0] === '🍉') {
-			return betAmount * 50;
+			return betAmount * 36;
 		}
 		else if (row[0] === '🔔') {
-			return betAmount * 100;
+			return betAmount * 90;
 		}
 		else if (row[0] === '⭐') {
-			return betAmount * 500;
+			return betAmount * 340;
 		}
 	}
 	return -betAmount;
