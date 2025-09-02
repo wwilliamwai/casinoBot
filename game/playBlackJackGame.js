@@ -29,7 +29,7 @@ async function playBlackJackGame(game, index, interaction) {
 	// if the player starts off with 21, run this code to the end of the game
 	if (game.playerSums[index] === 21) {
 		game.handDealerTill17(index);
-		return await displayGameEndResult({ game, index: index, row, response, interaction });
+		return await displayGameEndResult({ game, index, row, response, interaction });
 		// Stop here to prevent collector from starting and so it doesn't bug
 	}
 
@@ -72,12 +72,25 @@ const updateMessageAndData = async (game, index, endAmount, userID, response) =>
 	}
 	await updateBalance(userID, endAmount);
 	await updateBlackJackStreak(userID, game.winStreak);
+
+	let reply = '';
 	game.balance = Number(game.balance) + Number(endAmount);
-	if (index === 0) {
-		await response.resource.message.reply({ content: `<@${userID}> you now have $${game.balance} in your balance.` });
+
+	if (endAmount > 0) {
+		reply = `<@${userID}> you **won $${endAmount}.** you now have __**$${game.balance}** in your balance.__`;
+	}
+	else if (endAmount < 0) {
+		reply = `<@${userID}> you **lost $${Math.abs(endAmount)}.** you now have __**$${game.balance}** in your balance.__`;
 	}
 	else {
-		await response.reply({ content: `<@${userID}> you now have $${game.balance} in your balance.` });
+		reply = `<@${userID}> you **still** have __**$${game.balance}** in your balance.__`;
+	}
+
+	if (index === 0) {
+		await response.resource.message.reply({ content: reply });
+	}
+	else {
+		await response.reply({ content: reply });
 	}
 };
 
@@ -108,11 +121,7 @@ const displayGameEndResult = async ({ game, index, row, response, interaction })
 		endAmount = game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? game.winStreak + 1 : null;
 	}
-	// if the endAmount is greater than the userBalance after a double-down, default to the userBalance
-	if (game.balance < Math.abs(endAmount)) {
-		endAmount = Math.sign(endAmount) * game.balance;
-		game.betAmounts[index] = Math.abs(endAmount);
-	}
+
 	await updateEmbed({ content: message, game, index, row, interaction, showButtons: false, showDealerCard: true });
 	await updateMessageAndData(game, index, endAmount, interaction.user.id, response);
 };
@@ -157,7 +166,7 @@ const handleEnd = async (reason, game, index, row, interaction, response) => {
 		break;
 	case 'double-down-end':
 		game.addCardToPlayer(index);
-		game.betAmounts[index] = game.betAmounts[index] * 2;
+		game.doubleDownBet(index);
 		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: game.playerSums[index] <= 21 ? true : false });
 		break;
 	case 'dealer-end':
@@ -305,6 +314,7 @@ class GameData {
 		this.playerHands = [];
     	this.dealerHand = [];
     	this.betAmounts = [betAmount];
+		this.totalCommitted = betAmount;
     	this.balance = balance;
     	this.winStreak = winStreak;
 		this.splitGameInteractions = [];
@@ -329,6 +339,7 @@ class GameData {
 
 		// duplicate the bet for the new hand
 		this.betAmounts.push(this.betAmounts[oldIndex]);
+		this.totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 
 		// store the interaction for the new hand
 		this.splitGameInteractions.push(interaction);
@@ -340,17 +351,27 @@ class GameData {
 		}
 	}
 
+	doubleDownBet(i) {
+		if (this.totalCommitted + this.betAmounts[i] <= this.balance) {
+			this.betAmounts[i] = this.betAmounts[i] * 2;
+		}
+		else {
+			this.betAmounts[i] = this.betAmounts[i] + this.balance - this.totalCommitted;
+		}
+		this.totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
+	}
+
 	playerCanDoubleDown(i) {
 		return (
 			this.betAmounts[i] != 0 &&
-		this.betAmounts[i] != this.balance && !this.splitAces.includes(i)
+		this.balance - this.totalCommitted > 0 && !this.splitAces.includes(i)
 		);
 	}
 
 	playerCanSplit(i) {
 		return (
-			this.playerHands[i][0][1] === this.playerHands[i][1][1] &&
-        this.betAmounts[i] * 2 <= this.balance
+			this.faceCardsToNum(this.playerHands[i][0][1]) === this.faceCardsToNum(this.playerHands[i][1][1]) &&
+        this.totalCommitted + this.betAmounts[i] <= this.balance
 		);
 	}
 
@@ -412,7 +433,7 @@ class GameData {
 			return 11;
 		}
 		else {
-			return cardVal;
+			return Number(cardVal);
 		}
 	};
 }
