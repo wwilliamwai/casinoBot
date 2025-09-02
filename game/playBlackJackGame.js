@@ -71,8 +71,8 @@ const updateMessageAndData = async (game, index, endAmount, userID, response) =>
 		return;
 	}
 	await updateBalance(userID, endAmount);
-	updateBlackJackStreak(userID, game.winStreak);
-	game.balance += endAmount;
+	await updateBlackJackStreak(userID, game.winStreak);
+	game.balance += Number(endAmount);
 	if (index === 0) {
 		await response.resource.message.reply({ content: `<@${userID}> you now have $${game.balance} in your balance.` });
 	}
