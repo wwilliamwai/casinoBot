@@ -94,7 +94,7 @@ const displayGameEndResult = async ({ game, index, row, response, interaction })
 		endAmount = -game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? 0 : null;
 	}
-	else if (game.playerSums[index] === 21 && game.playerHands[index].length === 2) {
+	else if (game.playerSums[index] === 21 && game.playerHands[index].length === 2 && !game.splitAces.includes(index)) {
 		message = 'blackjack!!!!';
 		endAmount = game.betAmounts[index] * 1.5;
 		game.winStreak = game.winStreak != null ? game.winStreak + 1 : null;
@@ -216,14 +216,20 @@ const updateEmbed = async ({ content = null, game, index, row, interaction, show
 		interaction: interaction,
 		showDealerCard: showDealerCard });
 
-	// removes the extra buttons after the first update
-	if (game.playerHands[index].length > 2) {
-		row.components = row.components.filter(component => {
-  		return component.data.custom_id !== 'double-down' && component.data.custom_id !== 'split';
-		});
-	}
+	// filter row components if they aren't needed anymore
+	const filteredComponents = row.components.slice().filter(component => {
+		const id = component.data.custom_id;
 
-	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: showButtons ? [row] : [] });
+		// Remove double-down and split after first two cards
+		if (game.playerHands[index].length > 2 && (id === 'double-down' || id === 'split')) return false;
+
+		// Remove hit if this hand is a split Ace
+		if (game.splitAces.includes(index) && id === 'hit') return false;
+
+		return true;
+	});
+
+	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: showButtons ? [new ActionRowBuilder().addComponents(...filteredComponents)] : [] });
 };
 
 const createButtons = (game, index) => {
