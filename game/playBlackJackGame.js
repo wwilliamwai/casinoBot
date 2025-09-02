@@ -1,152 +1,223 @@
 const { ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageFlags, ComponentType } = require('discord.js');
 const Cards = require('cards.js');
 const { activeGames } = require('./gamblingUserState');
+const { updateBalance, updateBlackJackStreak } = require('../database/db.js');
 
-async function playBlackJackGame({ betAmount = 0, userBalance = null, winStreak = null, hasDoubleDown = false, interaction }) {
+async function startBlackJackSession({ betAmount = 0, userBalance = 1, winStreak = null, interaction }) {
 	// setup the gameData class
 	const game = new GameData(betAmount, userBalance, winStreak);
 
+	await playBlackJackGame(game, 0, interaction);
+}
+async function playBlackJackGame(game, index, interaction) {
 	// create the embed element
-	const embed = createEmbedElement({ game, interaction });
+	const embed = createEmbedElement({ game, index: index, interaction });
 	// create row item
-	const row = createButtons(hasDoubleDown);
+	const row = createButtons(game, index);
+
 	// send the embeded message
-	const response = await interaction.reply({ embeds: [embed], components: [row], withResponse: true });
-	// log this as an active game
+	let response = null;
+	// we need two different responses depending if its the first game or a split game
+	if (index === 0) {
+		response = await interaction.reply({ embeds: [embed], components: [row], withResponse: true });
+	}
+	else {
+		response = await interaction.editReply({ embeds: [embed], components: [row], withResponse: true });
+	}
 	activeGames.set(interaction.user.id, response);
 
 	// if the player starts off with 21, run this code to the end of the game
-	if (game.playerSum === 21) {
-		game.handDealerTill17();
-		return await displayGameEndResult({ game, row, interaction });
+	if (game.playerSums[index] === 21) {
+		game.handDealerTill17(index);
+		return await displayGameEndResult({ game, index: index, row, response, interaction });
 		// Stop here to prevent collector from starting and so it doesn't bug
 	}
 
 	// create the collector to take player input
-	const collector = response.resource.message.createMessageComponentCollector({
-		componentType: ComponentType.Button,
-		time: 300_000 });
+	let collector = null;
+	if (index === 0) {
+		collector = response.resource.message.createMessageComponentCollector({
+			componentType: ComponentType.Button,
+			time: 900_000 });
+	}
+	else {
+		collector = response.createMessageComponentCollector({
+			componentType: ComponentType.Button,
+			time: 900_000 });
+	}
 
 	return new Promise((resolve) => {
 		collector.on('collect', async i => {
-			if (i.user.id != interaction.user.id) {
-				await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
-				return;
-			}
-
-			collector.resetTimer();
-
-			switch (i.customId) {
-			case 'hit':
-				game.addCardToPlayer();
-				await updateEmbed({ game, row, interaction, isDealerTurn: false });
-
-				// check if the player busted after hitting
-				if (game.playerSum > 21) {
-					collector.stop('bust');
-				}
-				else if (game.playerSum === 21) {
-					collector.stop('got21');
-				}
-				break;
-			case 'double-down':
-				collector.stop('double-down-end');
-				break;
-			case 'stand':
-				collector.stop('dealer-end');
-				break;
-			};
-			await i.deferUpdate();
+			await handleCollect(i, game, index, row, interaction, collector);
 		});
 		collector.on('end', async (collected, reason) => {
-			switch (reason) {
-			case 'messageDelete':
-				if (game.betAmount != 0) {
-					await interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
-					activeGames.delete(interaction.user.id);
-				}
-				resolve([-game.betAmount, 0]);
-				break;
-			case 'time':
-				await updateEmbed({ content: 'yo you took too long bro. it\'s been 5 whole minutes!', game, row, interaction });
-				resolve([-game.betAmount, 0]);
-				break;
-			case 'bust':
-				resolve(await displayGameEndResult({ game, row, interaction }));
-				break;
-			case 'got21':
-				// then the house still has to roll to see if they can tie
-				game.handDealerTill17();
-				resolve(await displayGameEndResult({ game, row, interaction }));
-				break;
-			case 'double-down-end':
-				game.addCardToPlayer();
-				// if dealer still under 17 and you didn't bust, they still have to roll
-				if (game.dealerSum < 17 && game.playerSum <= 21) {
-					game.handDealerTill17();
-				}
-				game.betAmount = game.betAmount * 2;
-				resolve(await displayGameEndResult({ game, row, interaction }));
-				break;
-			case 'dealer-end':
-				game.handDealerTill17();
-				resolve(await displayGameEndResult({ game, row, interaction }));
-				break;
-			}
+			resolve(await handleEnd(reason, game, index, row, interaction, response));
 		});
 	});
 };
 
 // helper methods
+const createSplitGame = async (game, oldIndex, interaction) => {
+	const index = oldIndex + 1;
 
-const displayGameEndResult = async ({ game, row, interaction }) => {
+	game.splitCards(oldIndex, index, interaction);
+
+	const embed = createEmbedElement({ game, index, interaction });
+	await interaction.reply({ content: '**play the previous hand first!**', embeds: [embed], withResponse: true });
+};
+
+const updateMessageAndData = async (game, index, endAmount, userID, response) => {
+	if (game.betAmounts[index] === 0) {
+		return;
+	}
+	await updateBalance(userID, endAmount);
+	updateBlackJackStreak(userID, game.winStreak);
+	game.balance += endAmount;
+	if (index === 0) {
+		await response.resource.message.reply({ content: `<@${userID}> you now have $${game.balance} in your balance.` });
+	}
+	else {
+		await response.reply({ content: `<@${userID}> you now have $${game.balance} in your balance.` });
+	}
+};
+
+const displayGameEndResult = async ({ game, index, row, response, interaction }) => {
 	let message = '';
 	let endAmount = 0;
 
-	if (game.playerSum > 21) {
+	if (game.playerSums[index] > 21) {
 		message = 'busted! \u{274C}';
-		endAmount = -game.betAmount;
+		endAmount = -game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? 0 : null;
 	}
-	else if (game.playerSum === game.dealerSum) {
+	else if (game.playerSums[index] === game.dealerSum) {
 		message = 'wait. you guys drew? what the sigma!';
 	}
-	else if (game.dealerSum <= 21 && game.dealerSum > game.playerSum) {
+	else if (game.dealerSum <= 21 && game.dealerSum > game.playerSums[index]) {
 		message = 'you lost unlucky tbh';
-		endAmount = -game.betAmount;
+		endAmount = -game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? 0 : null;
 	}
 	else {
 		message = 'omg you beat the house so cool :3';
-		endAmount = game.betAmount;
+		endAmount = game.betAmounts[index];
 		game.winStreak = game.winStreak != null ? game.winStreak + 1 : null;
 	}
 	// if the endAmount is greater than the userBalance after a double-down, default to the userBalance
-	if (game.balance != null && game.balance < Math.abs(endAmount)) {
+	if (game.balance < Math.abs(endAmount)) {
 		endAmount = Math.sign(endAmount) * game.balance;
-		game.betAmount = Math.abs(endAmount);
+		game.betAmounts[index] = Math.abs(endAmount);
 	}
-	await updateEmbed({ game, row, interaction });
-	await interaction.editReply({ content: message, components: [] });
-	return [endAmount, game.winStreak];
+	await updateEmbed({ content: message, game, index, row, interaction, showButtons: false, showDealerCard: true });
+	await updateMessageAndData(game, index, endAmount, interaction.user.id, response);
 };
 
-const updateEmbed = async ({ content = null, game, row, interaction, isDealerTurn = true }) => {
+const finishHand = async ({ game, index, row, interaction, response, splitGameInteraction, dealerRoll = false }) => {
+	await updateEmbed({ game, index, row, interaction, showButtons: false, showDealerCard: false });
+
+	// if there's a game that split off and derives from this, recursively run another game!
+	if (splitGameInteraction) {
+		game.updateForSplitGame(index + 1);
+		await playBlackJackGame(game, index + 1, splitGameInteraction);
+	}
+	else if (dealerRoll) {
+		game.handDealerTill17();
+	}
+
+	await displayGameEndResult({ game, index, row, response, interaction });
+};
+
+const handleEnd = async (reason, game, index, row, interaction, response) => {
+	let splitGameInteraction = null;
+	if (game.splitGameInteractions.length > 0) {
+		splitGameInteraction = game.splitGameInteractions[index];
+	}
+
+	switch (reason) {
+	case 'messageDelete':
+		if (game.betAmounts[index] != 0) {
+			interaction.channel.send('message was deleted? money GONE! u better not be cheating... like dream minecraft');
+		}
+		await updateMessageAndData(game, index, -game.betAmounts[index], interaction.user.id);
+		break;
+	case 'time':
+		await updateEmbed({ content: 'yo you took too long bro. it\'s been 15 whole minutes!', game, index: index, row, interaction });
+		await updateMessageAndData(game, index, -game.betAmounts[index], interaction.user.id);
+		break;
+	case 'bust':
+		await finishHand({ game, index, row, interaction, response, splitGameInteraction });
+		break;
+	case 'got21':
+		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: true });
+		break;
+	case 'double-down-end':
+		game.addCardToPlayer(index);
+		game.betAmounts[index] = game.betAmounts[index] * 2;
+		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: game.playerHands[index] > 21 ? true : false });
+		break;
+	case 'dealer-end':
+		await finishHand({ game, index, row, interaction, response, splitGameInteraction, dealerRoll: true });
+		break;
+	}
+	return true;
+};
+
+const handleCollect = async (i, game, index, row, interaction, collector) => {
+	if (i.user.id != interaction.user.id) {
+		await i.reply({ content: 'wrong game bro. kys.', flags: MessageFlags.Ephemeral });
+		return;
+	}
+
+	collector.resetTimer();
+
+	switch (i.customId) {
+	case 'hit':
+		game.addCardToPlayer(index);
+		await updateEmbed({ game, index, row, interaction, showButtons: true });
+
+		// check if the player busted after hitting
+		if (game.playerSums[index] > 21) {
+			collector.stop('bust');
+		}
+		else if (game.playerSums[index] === 21) {
+			collector.stop('got21');
+		}
+		await i.deferUpdate();
+		break;
+	case 'double-down':
+		collector.stop('double-down-end');
+		await i.deferUpdate();
+		break;
+	case 'split':
+		await createSplitGame(game, index, i);
+		await updateEmbed({ content: '**play the current hand to play the next!**', game, index, row, interaction });
+		break;
+	case 'stand':
+		collector.stop('dealer-end');
+		await i.deferUpdate();
+		break;
+	};
+};
+
+const updateEmbed = async ({ content = null, game, index, row, interaction, showButtons = true, showDealerCard = false }) => {
 	// create a new embed object
 	const updatedEmbed = createEmbedElement({
 		game: game,
+		index: index,
 		interaction: interaction,
-		isDealerTurn: isDealerTurn });
+		showDealerCard: showDealerCard });
+
 	// removes the extra buttons after the first update
-	if (game.playerHand.length > 2) {
+	if (game.playerHands[index].length > 2) {
 		row.components = row.components.filter(component => {
-  		return component.data.custom_id !== 'double-down';
+  		return component.data.custom_id !== 'double-down' && component.data.custom_id !== 'split';
 		});
 	}
-	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: isDealerTurn ? [] : [row] });
+
+	await interaction.editReply({ content: content, embeds: [updatedEmbed], components: showButtons ? [row] : [] });
 };
 
-const createButtons = (hasDoubleDown) => {
+const createButtons = (game, index) => {
 	const buttons = [
 		new ButtonBuilder()
 			.setCustomId('hit')
@@ -161,7 +232,7 @@ const createButtons = (hasDoubleDown) => {
 			.setStyle(ButtonStyle.Secondary),
 	);
 
-	if (hasDoubleDown) {
+	if (game.playerCanDoubleDown(index)) {
 		buttons.push(
 			new ButtonBuilder()
 				.setCustomId('double-down')
@@ -170,16 +241,25 @@ const createButtons = (hasDoubleDown) => {
 		);
 	}
 
+	if (game.playerCanSplit(index)) {
+		buttons.push(
+			new ButtonBuilder()
+				.setCustomId('split')
+				.setLabel('Split \u{00F7}')
+				.setStyle(ButtonStyle.Secondary),
+		);
+	}
+
 	return new ActionRowBuilder().addComponents(...buttons);
 };
 
-const createEmbedElement = ({ game, interaction, isDealerTurn = false }) => {
-	const betAmountString = `**Amount Bet:** ${game.betAmount}` + (game.winStreak === null ? '\n\n' : '\n');
+const createEmbedElement = ({ game, index, interaction, showDealerCard = false }) => {
+	const betAmountString = `**Amount Bet:** ${game.betAmounts[index]}` + (game.winStreak === null ? '\n\n' : '\n');
 	const betWinStreakString = game.winStreak != null ? `**Betting Win Streak:** ${game.winStreak}\n\n` : '';
-	const dealerValueString = isDealerTurn
+	const dealerValueString = showDealerCard
 		? game.dealerSum
 		: `${game.faceCardsToNum(game.dealerHand[0][1])}+`;
-	const dealerCardsString = isDealerTurn
+	const dealerCardsString = showDealerCard
 		? game.handToString(game.dealerHand)
 		: game.handToString(game.dealerHand.slice(0, 1)) + ' `??`';
 
@@ -192,32 +272,71 @@ const createEmbedElement = ({ game, interaction, isDealerTurn = false }) => {
 		.setTitle('BlackJack\n-------------------------------------')
 		.setTimestamp(Date.now())
 		.setDescription(
-			`${betAmountString}${betWinStreakString}You | ${game.playerSum}\n${game.handToString(game.playerHand)}\n\nDealer | ${dealerValueString}\n${dealerCardsString}`);
+			`${betAmountString}${betWinStreakString}You | ${game.playerSums[index]}\n${game.handToString(game.playerHands[index])}\n\nDealer | ${dealerValueString}\n${dealerCardsString}`);
 };
 
 class GameData {
 	constructor(betAmount, balance, winStreak) {
 		this.deck = new Cards(false);
-		this.playerHand = [];
+		this.playerHands = [];
     	this.dealerHand = [];
-    	this.betAmount = betAmount;
+    	this.betAmounts = [betAmount];
     	this.balance = balance;
     	this.winStreak = winStreak;
+		this.splitGameInteractions = [];
 		this.setUpHands();
 	}
 
-	addCardToPlayer() {
-		this.playerHand.push(this.deck.takeTopCard());
-		this.playerSum = this.sumOfHand(this.playerHand);
+	updateForSplitGame(newIndex) {
+		this.playerHands[newIndex].push(this.deck.takeTopCard());
+		this.playerSums[newIndex] = this.sumOfHand(this.playerHands[newIndex]);
+	}
+
+	splitCards(oldIndex, newIndex, interaction) {
+		// move one card from the old hand into a new hand
+		this.playerHands.push([this.playerHands[oldIndex].pop()]);
+		// give the old hand a replacement card
+		this.playerHands[oldIndex].push(this.deck.takeTopCard());
+
+		// update sums for both hands
+		this.playerSums[oldIndex] = this.sumOfHand(this.playerHands[oldIndex]);
+		this.playerSums.push(this.sumOfHand(this.playerHands[newIndex]));
+
+		// duplicate the bet for the new hand
+		this.betAmounts.push(this.betAmounts[oldIndex]);
+
+		// store the interaction for the new hand
+		this.splitGameInteractions.push(interaction);
+	}
+
+	playerCanDoubleDown(i) {
+		if (this.betAmounts[i] != 0 && this.betAmounts[i] != this.balance) {
+			return true;
+		}
+		return false;
+	}
+
+	playerCanSplit(i) {
+		if (this.playerHands[i][0] === this.playerHands[i][1] && this.betAmounts[i] * 2 <= this.balance) {
+			return true;
+		}
+		return false;
+	}
+
+	addCardToPlayer(i) {
+		this.playerHands[i].push(this.deck.takeTopCard());
+		this.playerSums[i] = this.sumOfHand(this.playerHands[i]);
 	}
 
 	setUpHands() {
+		// the player can have multiple hands, but the dealer will just have one
 		this.deck.shuffle();
-		this.playerHand.push(this.deck.takeTopCard());
+		this.playerHands.push([this.deck.takeTopCard()]);
 		this.dealerHand.push(this.deck.takeTopCard());
-		this.playerHand.push(this.deck.takeTopCard());
+		this.playerHands[0].push(this.deck.takeTopCard());
 		this.dealerHand.push(this.deck.takeTopCard());
-		this.playerSum = this.sumOfHand(this.playerHand);
+
+		this.playerSums = [this.sumOfHand(this.playerHands[0])];
 		this.dealerSum = this.sumOfHand(this.dealerHand);
 	}
 
@@ -268,5 +387,5 @@ class GameData {
 }
 
 module.exports = {
-	playBlackJackGame,
+	startBlackJackSession,
 };

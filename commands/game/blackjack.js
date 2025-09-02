@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 const { activeGames, rehabilitatedUsers } = require('../../game/gamblingUserState');
-const { playBlackJackGame } = require('../../game/playBlackJackGame');
-const { getUser, updateAfterBlackJack } = require('../../database/db.js');
+const { startBlackJackSession } = require('../../game/playBlackJackGame');
+const { getUser } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
@@ -23,7 +23,7 @@ module.exports = {
 		// if they didn't bet, then play a normal blackjack game
 		if (!betAmount || betAmount === 0) {
 			activeGames.set(interactionUserID, null);
-			await playBlackJackGame({ betAmount: 0, interaction });
+			await playBlackJackGame({ interaction });
 			activeGames.delete(interactionUserID);
 			return;
 		}
@@ -45,15 +45,7 @@ module.exports = {
 				}
 				activeGames.set(interactionUserID, null);
 
-				const gameEndData = await playBettingGame(betAmount, user, interaction);
-				const existingGame = activeGames.get(interactionUserID);
-				if (!existingGame) {
-					interaction.channel.send(`${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.`);
-				} 
-				else {
-					await existingGame.resource.message.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
-				}
-				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
+				await startBlackJackSession({ betAmount, userBalance: user.balance, winStreak: user.blackjackstreak, interaction });
 			}
 			else {
 				await interaction.reply({ content: `${interaction.user}. you haven't collected any money yet. do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
@@ -70,12 +62,6 @@ module.exports = {
 };
 
 // helper functions
-
-
-const playBettingGame = async (betAmount, user, interaction) => {
-	const gameEndData = await playBlackJackGame({ betAmount, userBalance: user.balance, winStreak: user.blackjackstreak, hasDoubleDown: true, interaction });
-	return [...gameEndData];
-};
 
 const checkIfRehabilitated = async (interactionUserID, interaction) => {
 	if (rehabilitatedUsers.has(interactionUserID)) {

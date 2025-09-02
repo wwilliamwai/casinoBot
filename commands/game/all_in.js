@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 const { activeGames, rehabilitatedUsers } = require('../../game/gamblingUserState');
-const { playBlackJackGame } = require('../../game/playBlackJackGame');
-const { getUser, updateAfterBlackJack } = require('../../database/db.js');
+const { startBlackJackSession } = require('../../game/playBlackJackGame');
+const { getUser } = require('../../database/db.js');
 
 module.exports = {
 	category: 'game',
@@ -25,15 +25,7 @@ module.exports = {
 					return;
 				}
 				activeGames.set(interactionUserID, null);
-				const gameEndData = await playBettingGame(user.balance, user, interaction);
-				const existingGame = activeGames.get(interactionUserID);
-				if (!existingGame) {
-					interaction.channel.send(`${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.`);
-				} 
-				else {
-					await existingGame.resource.message.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
-				}
-				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
+				await startBlackJackSession({ betAmount: user.balance, userBalance: user.balance, winStreak: user.blackjackstreak, interaction });
 			}
 			else {
 				await interaction.reply({ content: `${interaction.user}. you haven't collected any money yet. do **/daily** to earn your first paycheck!`, flags: MessageFlags.Ephemeral });
@@ -50,11 +42,6 @@ module.exports = {
 };
 
 // helper functions
-
-const playBettingGame = async (betAmount, user, interaction) => {
-	const gameEndData = await playBlackJackGame({ betAmount, winStreak: user.blackjackstreak, hasDoubleDown: false, interaction });
-	return [...gameEndData];
-};
 
 const checkIfRehabilitated = async (interactionUserID, interaction) => {
 	if (rehabilitatedUsers.has(interactionUserID)) {

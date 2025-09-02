@@ -49,11 +49,11 @@ async function updateBalance(userID, amount) {
 }
 
 // Update balance and blackJackStreak
-async function updateAfterBlackJack(userID, amount, blackJackStreak) {
+async function updateBlackJackStreak(userID, blackJackStreak) {
 	const query = `
-    UPDATE users SET balance = balance + $1, blackjackstreak = $2 WHERE userid = $3;
+    UPDATE users SET blackjackstreak = $1 WHERE userid = $2;
   `;
-	await pool.query(query, [amount, blackJackStreak, userID]);
+	await pool.query(query, [blackJackStreak, userID]);
 }
 
 // Update lastWageDate
@@ -83,7 +83,7 @@ module.exports = {
 	getUser,
 	createUser,
 	updateBalance,
-	updateAfterBlackJack,
+	updateBlackJackStreak,
 	updateLastWageDate,
 	updateRobberyFailStreak,
 	getAllUsers,
