@@ -138,7 +138,7 @@ const updateEmbed = async ({ content = null, game, row, interaction, isDealerTur
 		interaction: interaction,
 		isDealerTurn: isDealerTurn });
 	// removes the extra buttons after the first update
-	if (game.playerHands[index].length > 2) {
+	if (game.playerHand.length > 2) {
 		row.components = row.components.filter(component => {
   		return component.data.custom_id !== 'double-down';
 		});
