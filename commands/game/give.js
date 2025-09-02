@@ -33,7 +33,7 @@ module.exports = {
 			return;
 		}
 
-		const money = interaction.options.getNumber('money');
+		const money = Math.floor(interaction.options.getNumber('money'));
 
 		try {
 
