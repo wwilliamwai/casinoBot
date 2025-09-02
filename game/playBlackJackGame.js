@@ -341,20 +341,16 @@ class GameData {
 	}
 
 	playerCanDoubleDown(i) {
-		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
-		const remainingBalance = this.balance - totalCommitted + this.betAmounts[i];
 		return (
 			this.betAmounts[i] != 0 &&
-        this.betAmounts[i] <= remainingBalance &&
-        !this.splitAces.includes(i)
+		this.betAmounts[i] != this.balance && !this.splitAces.includes(i)
 		);
 	}
 
 	playerCanSplit(i) {
-		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 		return (
-			this.faceCardsToNum(this.playerHands[i][0][1]) === this.faceCardsToNum(this.playerHands[i][1][1]) &&
-        totalCommitted + this.betAmounts[i] <= this.balance
+			this.playerHands[i][0][1] === this.playerHands[i][1][1] &&
+        this.betAmounts[i] * 2 <= this.balance
 		);
 	}
 
