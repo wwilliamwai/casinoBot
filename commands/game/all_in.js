@@ -26,8 +26,13 @@ module.exports = {
 				}
 				activeGames.set(interactionUserID, null);
 				const gameEndData = await playBettingGame(user.balance, user, interaction);
-				const existingGame = activeGames.get(interactionUserID).resource.message;
-				await existingGame.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
+				const existingGame = activeGames.get(interactionUserID);
+				if (!existingGame) {
+					interaction.channel.send(`${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.`);
+				} 
+				else {
+					await existingGame.resource.message.reply({ content: `${interaction.user} you now have $${Number(user.balance) + Number(gameEndData[0])} in your balance.` });
+				}
 				await updateAfterBlackJack(interactionUserID, gameEndData[0], gameEndData[1]);
 			}
 			else {
