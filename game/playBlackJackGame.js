@@ -342,9 +342,10 @@ class GameData {
 
 	playerCanDoubleDown(i) {
 		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
+		const remainingBalance = this.balance - totalCommitted + this.betAmounts[i];
 		return (
 			this.betAmounts[i] != 0 &&
-        totalCommitted + this.betAmounts[i] <= this.balance &&
+        this.betAmounts[i] <= remainingBalance &&
         !this.splitAces.includes(i)
 		);
 	}
