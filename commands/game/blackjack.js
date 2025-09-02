@@ -23,7 +23,7 @@ module.exports = {
 		// if they didn't bet, then play a normal blackjack game
 		if (!betAmount || betAmount === 0) {
 			activeGames.set(interactionUserID, null);
-			await playBlackJackGame({ interaction });
+			await startBlackJackSession({ interaction });
 			activeGames.delete(interactionUserID);
 			return;
 		}
