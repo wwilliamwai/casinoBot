@@ -352,7 +352,7 @@ class GameData {
 	playerCanSplit(i) {
 		const totalCommitted = this.betAmounts.reduce((sum, b) => sum + b, 0);
 		return (
-			this.playerHands[i][0][1] === this.playerHands[i][1][1] &&
+			this.faceCardsToNum(this.playerHands[i][0][1]) === this.faceCardsToNum(this.playerHands[i][1][1]) &&
         totalCommitted + this.betAmounts[i] <= this.balance
 		);
 	}
