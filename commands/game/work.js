@@ -7,6 +7,7 @@ const { cleaning } = require('../../game/playCleaningGame');
 const laborAmount = 50;
 
 module.exports = {
+	cooldown: 2,
 	category: 'game',
 	data: new SlashCommandBuilder()
 		.setName('work')
