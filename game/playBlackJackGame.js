@@ -332,6 +332,8 @@ class GameData {
 		this.playerHands.push([this.playerHands[oldIndex].pop()]);
 		// give the old hand a replacement card
 		this.playerHands[oldIndex].push(this.deck.takeTopCard());
+		// give the new hand a replacement card
+		this.playerHands[newIndex].push(this.deck.takeTopCard());
 
 		// update sums for both hands
 		this.playerSums[oldIndex] = this.sumOfHand(this.playerHands[oldIndex]);
