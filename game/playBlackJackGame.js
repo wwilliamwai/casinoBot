@@ -131,7 +131,6 @@ const finishHand = async ({ game, index, row, interaction, response, splitGameIn
 
 	// if there's a game that split off and derives from this, recursively run another game!
 	if (splitGameInteraction) {
-		game.updateForSplitGame(index + 1);
 		await playBlackJackGame(game, index + 1, splitGameInteraction);
 	}
 	else if (dealerRoll) {
@@ -320,11 +319,6 @@ class GameData {
 		this.splitGameInteractions = [];
 		this.splitAces = [];
 		this.setUpHands();
-	}
-
-	updateForSplitGame(newIndex) {
-		this.playerHands[newIndex].push(this.deck.takeTopCard());
-		this.playerSums[newIndex] = this.sumOfHand(this.playerHands[newIndex]);
 	}
 
 	splitCards(oldIndex, newIndex, interaction) {
