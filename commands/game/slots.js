@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
-const { activeGames, rehabilitatedUsers } = require('../../game/gamblingUserState');
+const { activeGames } = require('../../game/gamblingUserState');
 const { playSlotsGame } = require('../../game/playSlotsGame');
 const { getUser, updateBalance } = require('../../database/db.js');
 
@@ -27,9 +27,9 @@ module.exports = {
 		}
 
 		try {
-			if (await checkIfRehabilitated(interactionUserID, interaction)) return;
-
 			const user = await getUser(interactionUserID);
+
+			if (await checkIfRehabilitated(interaction, user)) return;
 
 			// if the user's data does exist
 			if (user) {
@@ -58,12 +58,10 @@ module.exports = {
 	},
 };
 
-const checkIfRehabilitated = async (interactionUserID, interaction) => {
-	if (rehabilitatedUsers.has(interactionUserID)) {
-		// YYYY-MM-DD
+const checkIfRehabilitated = async (interaction, user) => {
+	if (user) {
 		const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
-		if (today > rehabilitatedUsers.get(interactionUserID)) {
-			rehabilitatedUsers.delete(interactionUserID);
+		if (today > user.lastrehabdate || user.lastrehabdate === null) {
 			return false;
 		}
 		await interaction.reply('you are in rehabilitation. please wait for the next day (12 am) to continue playing.');

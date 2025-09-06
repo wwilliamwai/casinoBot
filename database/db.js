@@ -1,90 +1,63 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const Database = require('better-sqlite3');
 
-const pool = new Pool({
-	connectionString: process.env.DATABASE_URL,
-	ssl: {
-		rejectUnauthorized: false,
-	},
-});
+// Create or open SQLite database
+const db = new Database('database/users.db');
 
-// Create table if it doesn't exist
-async function createTable() {
-	const query = `
-    CREATE TABLE IF NOT EXISTS users (
-      userid TEXT PRIMARY KEY,
-      name TEXT,
-      balance INTEGER,
-      blackjackstreak INTEGER,
-      lastwagedate TEXT,
-	  robberyfailstreak INTEGER,
-    );
-  `;
-	await pool.query(query);
+// Create table if not exists
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS users (
+    userid TEXT PRIMARY KEY,
+    name TEXT,
+    balance INTEGER,
+    blackjackstreak INTEGER,
+    lastwagedate TEXT,
+    robberyfailstreak INTEGER,
+	lastrehabdaste TEXT
+  )
+`).run();
+
+// Functions
+function getUser(userID) {
+	return db.prepare('SELECT * FROM users WHERE userID = ?').get(userID);
 }
 
-// Get one user by userID
-async function getUser(userID) {
-	const res = await pool.query('SELECT * FROM users WHERE userid = $1', [userID]);
-	return res.rows[0];
-}
-
-// Create a new user if not exists
-async function createUser(userID, name, amount) {
-	const query = `
-    INSERT INTO users (userid, name, balance, blackjackstreak, lastwagedate, robberyfailstreak)
-    VALUES ($1, $2, $3, 0, NULL, 0)
-    ON CONFLICT ("userid") DO NOTHING;
-  `;
-	await pool.query(query, [userID, name, amount]);
+function createUser(userID, name) {
+	db.prepare(`
+    INSERT OR IGNORE INTO users (userid, name, balance, blackjackstreak, lastwagedate, robberyfailstreak)
+    VALUES (?, ?, 0, 0, NULL, 0)
+  `).run(userID, name);
 	return getUser(userID);
 }
 
-// Update balance by adding amount
-async function updateBalance(userID, amount) {
-	const query = `
-    UPDATE users SET balance = balance + $1 WHERE userid = $2;
-  `;
-	await pool.query(query, [amount, userID]);
+function getAllUsers() {
+	 return db.prepare('SELECT * FROM users').all();
 }
 
-// Update balance and blackJackStreak
-async function updateBlackJackStreak(userID, blackJackStreak) {
-	const query = `
-    UPDATE users SET blackjackstreak = $1 WHERE userid = $2;
-  `;
-	await pool.query(query, [blackJackStreak, userID]);
+function updateBalance(userID, amount) {
+	db.prepare('UPDATE users SET balance = balance + ? WHERE userID = ?').run(amount, userID);
 }
 
-// Update lastWageDate
-async function updateLastWageDate(userID, lastWageDate) {
-	const query = `
-    UPDATE users SET lastwagedate = $1 WHERE userid = $2;
-  `;
-	await pool.query(query, [lastWageDate, userID]);
+function updateBlackJackStreak(userID, blackJackStreak) {
+	db.prepare('UPDATE users SET blackjackstreak = ? WHERE userID = ?').run(blackJackStreak, userID);
+}
+function updateLastWageDate(userID, lastWageDate) {
+	db.prepare('UPDATE users SET lastwagedate = ? WHERE userID = ?').run(lastWageDate, userID);
+}
+function updateRobberyFailStreak(userID, failStreak) {
+	db.prepare('UPDATE users SET robberyfailstreak = ? WHERE userID = ?').run(failStreak, userID);
 }
 
-// Update robberyfailstreak
-async function updateRobberyFailStreak(userID, failStreak) {
-	const query = `
-	UPDATE users SET robberyfailstreak = $1 WHERE userid = $2;
-	`;
-	await pool.query(query, [failStreak, userID]);
-}
-
-// Get all users
-async function getAllUsers() {
-	const res = await pool.query('SELECT * FROM users;');
-	return res.rows;
+function updateLastRehabDate(userID, rehabDate) {
+	db.prepare('UPDATE users SET lastrehabdate = ? WHERE userID = ?').run(rehabDate, userID);
 }
 
 module.exports = {
-	createTable,
 	getUser,
 	createUser,
+	getAllUsers,
 	updateBalance,
 	updateBlackJackStreak,
 	updateLastWageDate,
 	updateRobberyFailStreak,
-	getAllUsers,
+	updateLastRehabDate,
 };
